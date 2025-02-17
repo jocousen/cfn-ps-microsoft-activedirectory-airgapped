@@ -1,6 +1,6 @@
 [submodule "submodules/cfn-ps-microsoft-pki"]
 	path = submodules/cfn-ps-microsoft-pki
-	url = https://github.com/aws-ia/cfn-ps-microsoft-pki.git
+	url = https://github.com/jocousen/cfn-ps-microsoft-pki.git
 [submodule "submodules/cfn-ps-microsoft-utilities"]
 	path = submodules/cfn-ps-microsoft-utilities
-	url = https://github.com/aws-ia/cfn-ps-microsoft-utilities.git
+	url = https://github.com/jocousen/cfn-ps-microsoft-utilities.git
