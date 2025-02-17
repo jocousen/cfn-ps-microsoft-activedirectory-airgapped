@@ -1,0 +1,12 @@
+# PowerShell Scripts
+createWinRMGPO.ps1               : 1826e8cd9edbe2d590229ffaa65ab77dda99d759de0d8af02a23ab992a10bdef
+deleteWinRMGPO.ps1               : 415b997b332a47f0990e31d8c83b05f8ab645c0620d717e441c89baae3c9809b
+
+# DSC Modules and Packages
+activedirectorydsc.6.0.1.nupkg   : 147cf0518a6413649c9e269dd63450299682934ae971bd5cd3dcc3eaa37a8814
+auditpolicydsc.1.4.0.nupkg       : 6754aa6b20322ad4ab90faba310e583b6a13288940dd96594b75fcc712a1bcbb
+certificatedsc.5.1.0.nupkg       : f6f86df3e21096f4c2d9200a1baec6291703e47596a595c5a4f034446f8b7c3f
+computermanagementdsc.8.5.0.nupkg : e23f9270a980af9cc722853d231e74b3bfdea6295e1bcfc5202c42f584fb0757
+dnsserverdsc.3.0.0.nupkg         : 439bfba11cac20de8fae98d44de118f9a45f6e76ce01e0562f82784d389532bc
+networkingdsc.8.2.0.nupkg        : 93ac7a2feb87a54fe0d9056b22e84aeedd1943840609d7d406d27a5d78e052c4
+securitypolicydsc.2.10.0.nupkg   : b64c2777343f19ae2ba2fcc2a8981420d61b0993bd428c005eceef8293daeadd
