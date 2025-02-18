@@ -1,0 +1,580 @@
+{
+    "AutomationExecution": {
+        "AutomationExecutionId": "89860f94-2719-4634-a8b3-af8406b3a7d8",
+        "DocumentName": "ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-TwoTierCAStack-1UGJGQWV2MW8G-AWSQuickstartCA-22VfwSPFVdjw",
+        "DocumentVersion": "1",
+        "ExecutionStartTime": "2025-02-12T15:43:02.612000-05:00",
+        "ExecutionEndTime": "2025-02-12T16:20:21.193000-05:00",
+        "AutomationExecutionStatus": "Success",
+        "StepExecutions": [
+            {
+                "StepName": "CaInstanceIds",
+                "Action": "aws:executeAwsApi",
+                "OnFailure": "step:signalfailure",
+                "ExecutionStartTime": "2025-02-12T15:43:03.047000-05:00",
+                "ExecutionEndTime": "2025-02-12T15:43:03.600000-05:00",
+                "StepStatus": "Success",
+                "Inputs": {
+                    "Api": "\"DescribeInstances\"",
+                    "Filters": "[{\"Values\":[\"QUICKSILVERCA1\",\"QUICKSILVERCA2\"],\"Name\":\"tag:Name\"},{\"Values\":[\"ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-TwoTierCAStack-1UGJGQWV2MW8G\"],\"Name\":\"tag:aws:cloudformation:stack-name\"},{\"Values\":[\"running\"],\"Name\":\"instance-state-name\"}]",
+                    "Service": "\"ec2\""
+                },
+                "Outputs": {
+                    "InstanceIds": [
+                        "i-0cd0026f159056c20",
+                        "i-0c705b20f40469720"
+                    ]
+                },
+                "StepExecutionId": "433f606d-32e8-474e-b299-85f3915d51be",
+                "OverriddenParameters": {},
+                "NextStep": "OrcaInstanceId",
+                "ValidNextSteps": [
+                    "OrcaInstanceId"
+                ]
+            },
+            {
+                "StepName": "OrcaInstanceId",
+                "Action": "aws:executeAwsApi",
+                "OnFailure": "step:signalfailure",
+                "ExecutionStartTime": "2025-02-12T15:43:03.819000-05:00",
+                "ExecutionEndTime": "2025-02-12T15:43:04.416000-05:00",
+                "StepStatus": "Success",
+                "Inputs": {
+                    "Api": "\"DescribeInstances\"",
+                    "Filters": "[{\"Values\":[\"QUICKSILVERCA1\"],\"Name\":\"tag:Name\"},{\"Values\":[\"ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-TwoTierCAStack-1UGJGQWV2MW8G\"],\"Name\":\"tag:aws:cloudformation:stack-name\"},{\"Values\":[\"running\"],\"Name\":\"instance-state-name\"}]",
+                    "Service": "\"ec2\""
+                },
+                "Outputs": {
+                    "InstanceId": [
+                        "i-0cd0026f159056c20"
+                    ]
+                },
+                "StepExecutionId": "f2ed6583-9759-4408-bd89-31f3df8b4bbf",
+                "OverriddenParameters": {},
+                "NextStep": "SubCaInstanceId",
+                "ValidNextSteps": [
+                    "SubCaInstanceId"
+                ]
+            },
+            {
+                "StepName": "SubCaInstanceId",
+                "Action": "aws:executeAwsApi",
+                "OnFailure": "step:signalfailure",
+                "ExecutionStartTime": "2025-02-12T15:43:04.634000-05:00",
+                "ExecutionEndTime": "2025-02-12T15:43:05.140000-05:00",
+                "StepStatus": "Success",
+                "Inputs": {
+                    "Api": "\"DescribeInstances\"",
+                    "Filters": "[{\"Values\":[\"QUICKSILVERCA2\"],\"Name\":\"tag:Name\"},{\"Values\":[\"ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-TwoTierCAStack-1UGJGQWV2MW8G\"],\"Name\":\"tag:aws:cloudformation:stack-name\"},{\"Values\":[\"running\"],\"Name\":\"instance-state-name\"}]",
+                    "Service": "\"ec2\""
+                },
+                "Outputs": {
+                    "InstanceId": [
+                        "i-0c705b20f40469720"
+                    ]
+                },
+                "StepExecutionId": "be255e1b-4aaa-4d9b-8f06-f2bad8a0ed66",
+                "OverriddenParameters": {},
+                "NextStep": "intializeInstances",
+                "ValidNextSteps": [
+                    "intializeInstances"
+                ]
+            },
+            {
+                "StepName": "intializeInstances",
+                "Action": "aws:runCommand",
+                "ExecutionStartTime": "2025-02-12T15:43:05.319000-05:00",
+                "ExecutionEndTime": "2025-02-12T15:46:27.375000-05:00",
+                "StepStatus": "Success",
+                "Inputs": {
+                    "CloudWatchOutputConfig": "{\"cloudWatchLogGroupName\":\"/aws/Quick_Start/ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-TwoTierCAStack-1UGJGQWV2MW8G\",\"cloudWatchOutputEnabled\":true}",
+                    "DocumentName": "\"AWS-RunPowerShellScript\"",
+                    "InstanceIds": "[\"i-0cd0026f159056c20\",\"i-0c705b20f40469720\"]",
+                    "Parameters": "{\"commands\":\"[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\\n\\n$S3BucketName = 'quicksilver-aws-ia'\\n$S3KeyPrefix = 'cfn-ps-microsoft-activedirectory/submodules/cfn-ps-microsoft-pki/'\\n$S3BucketRegion = 'us-east-1'\\n\\n$CustomModules = @(\\n    'Module-Pki.psd1',\\n    'Module-Pki.psm1'\\n)\\n\\n$Modules = @(\\n    @{\\n        Name    = 'NetworkingDsc'\\n        Version = '8.2.0'\\n    },\\n    @{\\n        Name    = 'ComputerManagementDsc'\\n        Version = '8.5.0'\\n    },\\n    @{\\n        Name = 'AuditPolicyDsc'\\n        Version = '1.4.0.0'\\n    }\\n)\\n\\nWrite-Output 'Creating AWSQuickstart Directory'\\nTry {\\n    $Null = New-Item -Path 'C:\\\\AWSQuickstart\\\\Module-Pki' -ItemType 'Directory' -ErrorAction Stop\\n} Catch [System.Exception] {\\n    Write-Output \\\"Failed to create AWSQuickstart directory $_\\\"\\n    Exit 1\\n}\\n\\n$S3KeyPrefix = $S3KeyPrefix.Substring(0,$S3KeyPrefix.Length -1)\\nWrite-Output 'Downloading Pki PowerShell Module'\\nForeach ($CustomModule in $CustomModules) {\\n    Try {\\n        $Null = Read-S3Object -BucketName $S3BucketName -Key \\\"$($S3KeyPrefix)/scripts/Modules/Module-Pki/$CustomModule\\\" -File \\\"C:\\\\AWSQuickstart\\\\Module-Pki\\\\$CustomModule\\\" -Region $S3BucketRegion\\n    } Catch [System.Exception] {\\n        Write-Output \\\"Failed to read and download $CustomModule.Name from S3 $_\\\"\\n        Exit 1\\n    }\\n}\\n\\nWrite-Output 'Installing NuGet Package Provider'\\nTry {\\n    $Null = Install-PackageProvider -Name 'NuGet' -MinimumVersion '2.8.5' -Force -ErrorAction Stop\\n} Catch [System.Exception] {\\n    Write-Output \\\"Failed to install NuGet Package Provider $_\\\"\\n    Exit 1\\n}\\n\\nWrite-Output 'Setting PSGallery Respository to trusted'\\nTry {\\n    Set-PSRepository -Name 'PSGallery' -InstallationPolicy 'Trusted' -ErrorAction Stop\\n} Catch [System.Exception] {\\n    Write-Output \\\"Failed to set PSGallery Respository to trusted $_\\\"\\n    Exit 1\\n}\\n\\nWrite-Output 'Installing the needed Powershell DSC modules for this Quick Start'\\nForeach ($Module in $Modules) {\\n    Try {\\n        Install-Module -Name $Module.Name -RequiredVersion $Module.Version -ErrorAction Stop\\n    } Catch [System.Exception] {\\n        Write-Output \\\"Failed to Import Modules $_\\\"\\n        Exit 1\\n    }\\n} \"}"
+                },
+                "Outputs": {
+                    "CommandId": [
+                        "53a1ae1f-bde0-41ef-8b8d-cfb737bdf7ac"
+                    ],
+                    "OutputPayload": [
+                        "{\"Status\":\"Success\",\"CommandId\":\"53a1ae1f-bde0-41ef-8b8d-cfb737bdf7ac\"}"
+                    ],
+                    "Status": [
+                        "Success"
+                    ]
+                },
+                "StepExecutionId": "81f06f34-29e5-4e50-8109-f95cd5fbd2f1",
+                "OverriddenParameters": {},
+                "NextStep": "configureInstances",
+                "ValidNextSteps": [
+                    "configureInstances"
+                ]
+            },
+            {
+                "StepName": "configureInstances",
+                "Action": "aws:runCommand",
+                "OnFailure": "step:signalfailure",
+                "ExecutionStartTime": "2025-02-12T15:46:27.564000-05:00",
+                "ExecutionEndTime": "2025-02-12T15:47:30.997000-05:00",
+                "StepStatus": "Success",
+                "Inputs": {
+                    "CloudWatchOutputConfig": "{\"cloudWatchLogGroupName\":\"/aws/Quick_Start/ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-TwoTierCAStack-1UGJGQWV2MW8G\",\"cloudWatchOutputEnabled\":true}",
+                    "DocumentName": "\"AWS-RunPowerShellScript\"",
+                    "InstanceIds": "[\"i-0cd0026f159056c20\",\"i-0c705b20f40469720\"]",
+                    "Parameters": "{\"commands\":\"Try {\\n    Import-Module -Name 'C:\\\\AWSQuickstart\\\\Module-Pki\\\\Module-Pki.psm1' -Force\\n} Catch [System.Exception] {\\n    Write-Output \\\"Failed to import Pki PS Module $_\\\"\\n    Exit 1\\n}\\nNew-VolumeFromRawDisk\\nInvoke-PreConfig\\nInvoke-LcmConfig\"}"
+                },
+                "Outputs": {
+                    "CommandId": [
+                        "45be52c0-8448-4e84-b613-3fa618f47e3b"
+                    ],
+                    "OutputPayload": [
+                        "{\"Status\":\"Success\",\"CommandId\":\"45be52c0-8448-4e84-b613-3fa618f47e3b\"}"
+                    ],
+                    "Status": [
+                        "Success"
+                    ]
+                },
+                "StepExecutionId": "b9e45dec-480a-49ed-976b-b086d37f6611",
+                "OverriddenParameters": {},
+                "NextStep": "configureOrCaMof",
+                "ValidNextSteps": [
+                    "configureOrCaMof"
+                ]
+            },
+            {
+                "StepName": "configureOrCaMof",
+                "Action": "aws:runCommand",
+                "OnFailure": "step:signalfailure",
+                "ExecutionStartTime": "2025-02-12T15:47:31.194000-05:00",
+                "ExecutionEndTime": "2025-02-12T15:48:55.189000-05:00",
+                "StepStatus": "Success",
+                "Inputs": {
+                    "CloudWatchOutputConfig": "{\"cloudWatchLogGroupName\":\"/aws/Quick_Start/ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-TwoTierCAStack-1UGJGQWV2MW8G\",\"cloudWatchOutputEnabled\":true}",
+                    "DocumentName": "\"AWS-RunPowerShellScript\"",
+                    "InstanceIds": "[\"i-0cd0026f159056c20\"]",
+                    "Parameters": "{\"commands\":\"Try {\\n    Import-Module -Name 'C:\\\\AWSQuickstart\\\\Module-Pki\\\\Module-Pki.psm1' -Force\\n} Catch [System.Exception] {\\n    Write-Output \\\"Failed to import Pki PS Module $_\\\"\\n    Exit 1\\n}\\n$EniConfig = Get-EniConfig\\nSet-DscConfiguration -CaType Offline -DomainController1IP '10.2.0.10' -DomainController2IP '10.2.1.10' -GatewayAddress $EniConfig.GatewayAddress -InstanceNetBIOSName 'QUICKSILVERCA1' -IpAddress $EniConfig.IpAddress -MacAddress $EniConfig.MacAddress\"}"
+                },
+                "Outputs": {
+                    "CommandId": [
+                        "0a54e606-da67-43ee-b414-b786705e7a9e"
+                    ],
+                    "Output": [
+                        "Getting the DSC encryption certificate thumbprint to secure the MOF file\r\nCreating configuration data block that has the certificate information for DSC configuration processing\r\nGenerating MOF file\r\n\r\n\r\n    Directory: C:\\AWSQuickstart\\ConfigInstance\r\n\r\n\r\nMode                 LastWriteTime         Length Name                                                                 \r\n----                 -------------         ------ ----                                                                 \r\n-a----         2/12/2025   8:48 PM           8116 LocalHost.mof                                                        \r\n\r\n\r\n"
+                    ],
+                    "OutputPayload": [
+                        "{\"Status\":\"Success\",\"ResponseCode\":0,\"Output\":\"Getting the DSC encryption certificate thumbprint to secure the MOF file\\r\\nCreating configuration data block that has the certificate information for DSC configuration processing\\r\\nGenerating MOF file\\r\\n\\r\\n\\r\\n    Directory: C:\\\\AWSQuickstart\\\\ConfigInstance\\r\\n\\r\\n\\r\\nMode                 LastWriteTime         Length Name                                                                 \\r\\n----                 -------------         ------ ----                                                                 \\r\\n-a----         2/12/2025   8:48 PM           8116 LocalHost.mof                                                        \\r\\n\\r\\n\\r\\n\",\"CommandId\":\"0a54e606-da67-43ee-b414-b786705e7a9e\"}"
+                    ],
+                    "ResponseCode": [
+                        "0"
+                    ],
+                    "Status": [
+                        "Success"
+                    ]
+                },
+                "StepExecutionId": "e321b12e-9edd-4d93-9a7c-08e602b5dc3c",
+                "OverriddenParameters": {},
+                "NextStep": "runOrCaMof",
+                "ValidNextSteps": [
+                    "runOrCaMof"
+                ]
+            },
+            {
+                "StepName": "runOrCaMof",
+                "Action": "aws:runCommand",
+                "OnFailure": "step:signalfailure",
+                "ExecutionStartTime": "2025-02-12T15:48:55.390000-05:00",
+                "ExecutionEndTime": "2025-02-12T15:55:27.517000-05:00",
+                "StepStatus": "Success",
+                "Inputs": {
+                    "CloudWatchOutputConfig": "{\"cloudWatchLogGroupName\":\"/aws/Quick_Start/ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-TwoTierCAStack-1UGJGQWV2MW8G\",\"cloudWatchOutputEnabled\":true}",
+                    "DocumentName": "\"AWS-RunPowerShellScript\"",
+                    "InstanceIds": "[\"i-0cd0026f159056c20\"]",
+                    "Parameters": "{\"commands\":\"Try {\\n    Import-Module -Name 'C:\\\\AWSQuickstart\\\\Module-Pki\\\\Module-Pki.psm1' -Force\\n} Catch [System.Exception] {\\n    Write-Output \\\"Failed to import Pki PS Module $_\\\"\\n    Exit 1\\n}\\nStart-DscConfiguration 'C:\\\\AWSQuickstart\\\\ConfigInstance' -Wait -Verbose -Force\\nInvoke-DscStatusCheck\"}"
+                },
+                "Outputs": {
+                    "CommandId": [
+                        "9c5a41d1-d793-45c2-9137-94e81fc2c785"
+                    ],
+                    "Output": [
+                        "VERBOSE: Perform operation 'Invoke CimMethod' with following parameters, ''methodName' = \r\nSendConfigurationApply,'className' = MSFT_DSCLocalConfigurationManager,'namespaceName' = \r\nroot/Microsoft/Windows/DesiredStateConfiguration'.\nVERBOSE: An LCM method call arrived from computer EC2AMAZ-4FR69MV with user sid S-1-5-18.\nVERBOSE: [EC2AMAZ-4FR69MV]: LCM:  [ Start  Set      ]\nVERBOSE: [EC2AMAZ-4FR69MV]: LCM:  [ Start  Resource ]  [[NetAdapterName]RenameNetAdapterPrimary]\nVERBOSE: [EC2AMAZ-4FR69MV]: LCM:  [ Start  Test     ]  [[NetAdapterName]RenameNetAdapterPrimary]\nVERBOSE: [EC2AMAZ-4FR69MV]:                            [[NetAdapterName]RenameNetAdapterPrimary] Test-TargetResource: \r\nTesting the network adapter Name 'Primary'.\nVERBOSE: [EC2AMAZ-4FR69MV]:                            [[NetAdapterName]RenameNetAdapterPrimary] Find-NetworkAdapter: \r\nFinding network adapters matching the parameters.\nVERBOSE: [EC2AMAZ-4FR69MV]:                            [[NetAdapterName]RenameNetAdapterPrimary] Test-TargetResource: \r\nFinding network adapter matching search criteria.\nVERBOSE: [EC2AMAZ-4FR69MV]:                            [[NetAdapterName]RenameNetAdapterPrimary] Find-NetworkAdapter: \r\nFinding network adapters matching the parameters.\nVERBOSE: [EC2AMAZ-4FR69MV]:                            [[NetAdapterName]RenameNetAdapterPrimary] Find-NetworkAdapter: 1\r\n network adapters were found matching the parameters.\nVERBOSE: [EC2AMAZ-4FR69MV]:                            [[NetAdapterName]RenameNetAdapterPrimary] Test-TargetResource: \r\nnetwork adapter Name 'Ethernet 3' does not match the adapter 'Primary' that was found. Rename required.\nVERBOSE: [EC2AMAZ-4FR69MV]: LCM:  [ End    Test     ]  [[NetAdapterName]RenameNetAdapterPrimary]  in 2.0730 seconds.\nVERBOSE: [EC2AMAZ-4FR69MV]: LCM:  [ Start  Set      ]  [[NetAdapterName]RenameNetAdapterPrimary]\nVERBOSE: [EC2AMAZ-4FR69MV]:                            [[NetAdapterName]RenameNetAdapterPrimary] Set-TargetResource: \r\nSetting the network adapter Name 'Primary'.\nVERBOSE: [EC2AMAZ-4FR69MV]:                            [[NetAdapterName]RenameNetAdapterPrimary] Find-NetworkAdapter: \r\nFinding network adapters matching the parameters.\nVERBOSE: [EC2AMAZ-4FR69MV]:                            [[NetAdapterName]RenameNetAdapterPrimary] Find-NetworkAdapter: 1\r\n network adapters were found matching the parameters.\nVERBOSE: [EC2AMAZ-4FR69MV]:                            [[NetAdapterName]RenameNetAdapterPrimary] Set-TargetReso\n---Output truncated---"
+                    ],
+                    "OutputPayload": [
+                        "{\"Status\":\"Success\",\"ResponseCode\":0,\"Output\":\"VERBOSE: Perform operation \\u0027Invoke CimMethod\\u0027 with following parameters, \\u0027\\u0027methodName\\u0027 \\u003d \\r\\nSendConfigurationApply,\\u0027className\\u0027 \\u003d MSFT_DSCLocalConfigurationManager,\\u0027namespaceName\\u0027 \\u003d \\r\\nroot/Microsoft/Windows/DesiredStateConfiguration\\u0027.\\nVERBOSE: An LCM method call arrived from computer EC2AMAZ-4FR69MV with user sid S-1-5-18.\\nVERBOSE: [EC2AMAZ-4FR69MV]: LCM:  [ Start  Set      ]\\nVERBOSE: [EC2AMAZ-4FR69MV]: LCM:  [ Start  Resource ]  [[NetAdapterName]RenameNetAdapterPrimary]\\nVERBOSE: [EC2AMAZ-4FR69MV]: LCM:  [ Start  Test     ]  [[NetAdapterName]RenameNetAdapterPrimary]\\nVERBOSE: [EC2AMAZ-4FR69MV]:                            [[NetAdapterName]RenameNetAdapterPrimary] Test-TargetResource: \\r\\nTesting the network adapter Name \\u0027Primary\\u0027.\\nVERBOSE: [EC2AMAZ-4FR69MV]:                            [[NetAdapterName]RenameNetAdapterPrimary] Find-NetworkAdapter: \\r\\nFinding network adapters matching the parameters.\\nVERBOSE: [EC2AMAZ-4FR69MV]:                            [[NetAdapterName]RenameNetAdapterPrimary] Test-TargetResource: \\r\\nFinding network adapter matching search criteria.\\nVERBOSE: [EC2AMAZ-4FR69MV]:                            [[NetAdapterName]RenameNetAdapterPrimary] Find-NetworkAdapter: \\r\\nFinding network adapters matching the parameters.\\nVERBOSE: [EC2AMAZ-4FR69MV]:                            [[NetAdapterName]RenameNetAdapterPrimary] Find-NetworkAdapter: 1\\r\\n network adapters were found matching the parameters.\\nVERBOSE: [EC2AMAZ-4FR69MV]:                            [[NetAdapterName]RenameNetAdapterPrimary] Test-TargetResource: \\r\\nnetwork adapter Name \\u0027Ethernet 3\\u0027 does not match the adapter \\u0027Primary\\u0027 that was found. Rename required.\\nVERBOSE: [EC2AMAZ-4FR69MV]: LCM:  [ End    Test     ]  [[NetAdapterName]RenameNetAdapterPrimary]  in 2.0730 seconds.\\nVERBOSE: [EC2AMAZ-4FR69MV]: LCM:  [ Start  Set      ]  [[NetAdapterName]RenameNetAdapterPrimary]\\nVERBOSE: [EC2AMAZ-4FR69MV]:                            [[NetAdapterName]RenameNetAdapterPrimary] Set-TargetResource: \\r\\nSetting the network adapter Name \\u0027Primary\\u0027.\\nVERBOSE: [EC2AMAZ-4FR69MV]:                            [[NetAdapterName]RenameNetAdapterPrimary] Find-NetworkAdapter: \\r\\nFinding network adapters matching the parameters.\\nVERBOSE: [EC2AMAZ-4FR69MV]:                            [[NetAdapterName]RenameNetAdapterPrimary] Find-NetworkAdapter: 1\\r\\n network adapters were found matching the parameters.\\nVERBOSE: [EC2AMAZ-4FR69MV]:                            [[NetAdapterName]RenameNetAdapterPrimary] Set-TargetReso\\n---Output truncated---\",\"CommandId\":\"9c5a41d1-d793-45c2-9137-94e81fc2c785\"}"
+                    ],
+                    "ResponseCode": [
+                        "0"
+                    ],
+                    "Status": [
+                        "Success"
+                    ]
+                },
+                "StepExecutionId": "7437f864-37ac-4b40-a8ae-b9af316ec6eb",
+                "OverriddenParameters": {},
+                "NextStep": "InstallOrCa",
+                "ValidNextSteps": [
+                    "InstallOrCa"
+                ]
+            },
+            {
+                "StepName": "InstallOrCa",
+                "Action": "aws:runCommand",
+                "OnFailure": "step:signalfailure",
+                "ExecutionStartTime": "2025-02-12T15:55:27.702000-05:00",
+                "ExecutionEndTime": "2025-02-12T15:57:53.519000-05:00",
+                "StepStatus": "Success",
+                "Inputs": {
+                    "CloudWatchOutputConfig": "{\"cloudWatchLogGroupName\":\"/aws/Quick_Start/ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-TwoTierCAStack-1UGJGQWV2MW8G\",\"cloudWatchOutputEnabled\":true}",
+                    "DocumentName": "\"AWS-RunPowerShellScript\"",
+                    "InstanceIds": "[\"i-0cd0026f159056c20\"]",
+                    "Parameters": "{\"commands\":\"Try {\\n    Import-Module -Name 'C:\\\\AWSQuickstart\\\\Module-Pki\\\\Module-Pki.psm1' -Force\\n} Catch [System.Exception] {\\n    Write-Output \\\"Failed to import Pki PS Module $_\\\"\\n    Exit 1\\n}\\n$Secret = Get-SecretInfo -Domain 'quicksilver.aws.dev' -SecretArn 'arn:aws:secretsmanager:us-east-1:396913736034:secret:ADAltUserSecrets-ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-SSbL8B'\\nInvoke-TwoTierOrCaConfig -Credentials $Secret.Credentials -DirectoryType 'SelfManaged' -DomainDNSName 'quicksilver.aws.dev' -OrCaCommonName 'QUICKSILVERCA1' -OrCaHashAlgorithm 'SHA256' -OrCaKeyLength '2048' -OrCaValidityPeriodUnits '10' -S3CRLBucketName 'examplebucket' -SubCaServerNetBIOSName 'QUICKSILVERCA2' -UseS3ForCRL 'No'\"}"
+                },
+                "Outputs": {
+                    "CommandId": [
+                        "0c96b84d-2f2e-46d8-812f-81b4542ca9ff"
+                    ],
+                    "Output": [
+                        "Creating PKI directories\r\nCreating CAPolicy.inf\r\nInstalling Offline Root CA\r\nConfiguring CRL distro points\r\nConfiguring AIA distro points\r\nConfiguring Offline Root CA\r\nRestarting CA service\r\nPublishing CRL\r\nCopying CRL to PKI folder\r\nRestarting CA service\r\nCreating Update CRL Scheduled Task\r\nRunning CRL Scheduled Task\r\nRestarting CA service\r\nCreating PkiSysvolPSDrive\r\nCreating the PkiRootCA SYSVOL folder\r\nCopying CertEnroll contents to SYSVOL PkiRootCA folder\r\nRemoving PkiSysvolPSDrive\r\n"
+                    ],
+                    "OutputPayload": [
+                        "{\"Status\":\"Success\",\"ResponseCode\":0,\"Output\":\"Creating PKI directories\\r\\nCreating CAPolicy.inf\\r\\nInstalling Offline Root CA\\r\\nConfiguring CRL distro points\\r\\nConfiguring AIA distro points\\r\\nConfiguring Offline Root CA\\r\\nRestarting CA service\\r\\nPublishing CRL\\r\\nCopying CRL to PKI folder\\r\\nRestarting CA service\\r\\nCreating Update CRL Scheduled Task\\r\\nRunning CRL Scheduled Task\\r\\nRestarting CA service\\r\\nCreating PkiSysvolPSDrive\\r\\nCreating the PkiRootCA SYSVOL folder\\r\\nCopying CertEnroll contents to SYSVOL PkiRootCA folder\\r\\nRemoving PkiSysvolPSDrive\\r\\n\",\"CommandId\":\"0c96b84d-2f2e-46d8-812f-81b4542ca9ff\"}"
+                    ],
+                    "ResponseCode": [
+                        "0"
+                    ],
+                    "Status": [
+                        "Success"
+                    ]
+                },
+                "StepExecutionId": "04a03cfc-4827-41fe-8e71-bdf78371029a",
+                "OverriddenParameters": {},
+                "NextStep": "configureSubCaMof",
+                "ValidNextSteps": [
+                    "configureSubCaMof"
+                ]
+            },
+            {
+                "StepName": "configureSubCaMof",
+                "Action": "aws:runCommand",
+                "OnFailure": "step:signalfailure",
+                "ExecutionStartTime": "2025-02-12T15:57:53.708000-05:00",
+                "ExecutionEndTime": "2025-02-12T16:01:20.268000-05:00",
+                "StepStatus": "Success",
+                "Inputs": {
+                    "CloudWatchOutputConfig": "{\"cloudWatchLogGroupName\":\"/aws/Quick_Start/ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-TwoTierCAStack-1UGJGQWV2MW8G\",\"cloudWatchOutputEnabled\":true}",
+                    "DocumentName": "\"AWS-RunPowerShellScript\"",
+                    "InstanceIds": "[\"i-0c705b20f40469720\"]",
+                    "Parameters": "{\"commands\":\"Try {\\n    Import-Module -Name 'C:\\\\AWSQuickstart\\\\Module-Pki\\\\Module-Pki.psm1' -Force\\n} Catch [System.Exception] {\\n    Write-Output \\\"Failed to import Pki PS Module $_\\\"\\n    Exit 1\\n}\\n$EniConfig = Get-EniConfig\\n$Secret = Get-SecretInfo -Domain 'QUICKSILVER' -SecretArn 'arn:aws:secretsmanager:us-east-1:396913736034:secret:ADAltUserSecrets-ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-SSbL8B'\\nSet-DscConfiguration -CaType Enterprise -Credentials $Secret.Credentials -DomainController1IP '10.2.0.10' -DomainController2IP '10.2.1.10' -DomainDNSName 'quicksilver.aws.dev' -GatewayAddress $EniConfig.GatewayAddress -InstanceNetBIOSName 'QUICKSILVERCA2' -IpAddress $EniConfig.IpAddress -MacAddress $EniConfig.MacAddress -UseS3ForCRL 'No'\"}"
+                },
+                "Outputs": {
+                    "CommandId": [
+                        "000c4232-f5d5-4335-9fd0-66488db61220"
+                    ],
+                    "Output": [
+                        "Getting the DSC encryption certificate thumbprint to secure the MOF file\r\nCreating configuration data block that has the certificate information for DSC configuration processing\r\nGenerating MOF file\r\n\r\n\r\n    Directory: C:\\AWSQuickstart\\ConfigInstance\r\n\r\n\r\nMode                 LastWriteTime         Length Name                                                                 \r\n----                 -------------         ------ ----                                                                 \r\n-a----         2/12/2025   9:01 PM          14414 LocalHost.mof                                                        \r\n\r\n\r\n"
+                    ],
+                    "OutputPayload": [
+                        "{\"Status\":\"Success\",\"ResponseCode\":0,\"Output\":\"Getting the DSC encryption certificate thumbprint to secure the MOF file\\r\\nCreating configuration data block that has the certificate information for DSC configuration processing\\r\\nGenerating MOF file\\r\\n\\r\\n\\r\\n    Directory: C:\\\\AWSQuickstart\\\\ConfigInstance\\r\\n\\r\\n\\r\\nMode                 LastWriteTime         Length Name                                                                 \\r\\n----                 -------------         ------ ----                                                                 \\r\\n-a----         2/12/2025   9:01 PM          14414 LocalHost.mof                                                        \\r\\n\\r\\n\\r\\n\",\"CommandId\":\"000c4232-f5d5-4335-9fd0-66488db61220\"}"
+                    ],
+                    "ResponseCode": [
+                        "0"
+                    ],
+                    "Status": [
+                        "Success"
+                    ]
+                },
+                "StepExecutionId": "5d66c70c-e2c9-4a34-b804-ab8fb945051e",
+                "OverriddenParameters": {},
+                "NextStep": "runSubCaMof",
+                "ValidNextSteps": [
+                    "runSubCaMof"
+                ]
+            },
+            {
+                "StepName": "runSubCaMof",
+                "Action": "aws:runCommand",
+                "OnFailure": "step:signalfailure",
+                "ExecutionStartTime": "2025-02-12T16:01:20.481000-05:00",
+                "ExecutionEndTime": "2025-02-12T16:09:24.675000-05:00",
+                "StepStatus": "Success",
+                "Inputs": {
+                    "CloudWatchOutputConfig": "{\"cloudWatchLogGroupName\":\"/aws/Quick_Start/ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-TwoTierCAStack-1UGJGQWV2MW8G\",\"cloudWatchOutputEnabled\":true}",
+                    "DocumentName": "\"AWS-RunPowerShellScript\"",
+                    "InstanceIds": "[\"i-0c705b20f40469720\"]",
+                    "Parameters": "{\"commands\":\"Try {\\n    Import-Module -Name 'C:\\\\AWSQuickstart\\\\Module-Pki\\\\Module-Pki.psm1' -Force\\n} Catch [System.Exception] {\\n    Write-Output \\\"Failed to import Pki PS Module $_\\\"\\n    Exit 1\\n}\\nStart-DscConfiguration 'C:\\\\AWSQuickstart\\\\ConfigInstance' -Wait -Verbose -Force\\nInvoke-DscStatusCheck\"}"
+                },
+                "Outputs": {
+                    "CommandId": [
+                        "00ffe0fc-31a6-42ea-961b-88aedf6f6dfe"
+                    ],
+                    "Output": [
+                        "VERBOSE: Perform operation 'Invoke CimMethod' with following parameters, ''methodName' = \r\nSendConfigurationApply,'className' = MSFT_DSCLocalConfigurationManager,'namespaceName' = \r\nroot/Microsoft/Windows/DesiredStateConfiguration'.\nVERBOSE: An LCM method call arrived from computer EC2AMAZ-T194Q02 with user sid S-1-5-18.\nVERBOSE: [EC2AMAZ-T194Q02]: LCM:  [ Start  Set      ]\nVERBOSE: [EC2AMAZ-T194Q02]: LCM:  [ Start  Resource ]  [[NetAdapterName]RenameNetAdapterPrimary]\nVERBOSE: [EC2AMAZ-T194Q02]: LCM:  [ Start  Test     ]  [[NetAdapterName]RenameNetAdapterPrimary]\nVERBOSE: [EC2AMAZ-T194Q02]:                            [[NetAdapterName]RenameNetAdapterPrimary] Test-TargetResource: \r\nTesting the network adapter Name 'Primary'.\nVERBOSE: [EC2AMAZ-T194Q02]:                            [[NetAdapterName]RenameNetAdapterPrimary] Find-NetworkAdapter: \r\nFinding network adapters matching the parameters.\nVERBOSE: [EC2AMAZ-T194Q02]:                            [[NetAdapterName]RenameNetAdapterPrimary] Test-TargetResource: \r\nFinding network adapter matching search criteria.\nVERBOSE: [EC2AMAZ-T194Q02]:                            [[NetAdapterName]RenameNetAdapterPrimary] Find-NetworkAdapter: \r\nFinding network adapters matching the parameters.\nVERBOSE: [EC2AMAZ-T194Q02]:                            [[NetAdapterName]RenameNetAdapterPrimary] Find-NetworkAdapter: 1\r\n network adapters were found matching the parameters.\nVERBOSE: [EC2AMAZ-T194Q02]:                            [[NetAdapterName]RenameNetAdapterPrimary] Test-TargetResource: \r\nnetwork adapter Name 'Ethernet 3' does not match the adapter 'Primary' that was found. Rename required.\nVERBOSE: [EC2AMAZ-T194Q02]: LCM:  [ End    Test     ]  [[NetAdapterName]RenameNetAdapterPrimary]  in 1.8790 seconds.\nVERBOSE: [EC2AMAZ-T194Q02]: LCM:  [ Start  Set      ]  [[NetAdapterName]RenameNetAdapterPrimary]\nVERBOSE: [EC2AMAZ-T194Q02]:                            [[NetAdapterName]RenameNetAdapterPrimary] Set-TargetResource: \r\nSetting the network adapter Name 'Primary'.\nVERBOSE: [EC2AMAZ-T194Q02]:                            [[NetAdapterName]RenameNetAdapterPrimary] Find-NetworkAdapter: \r\nFinding network adapters matching the parameters.\nVERBOSE: [EC2AMAZ-T194Q02]:                            [[NetAdapterName]RenameNetAdapterPrimary] Find-NetworkAdapter: 1\r\n network adapters were found matching the parameters.\nVERBOSE: [EC2AMAZ-T194Q02]:                            [[NetAdapterName]RenameNetAdapterPrimary] Set-TargetReso\n---Output truncated---"
+                    ],
+                    "OutputPayload": [
+                        "{\"Status\":\"Success\",\"ResponseCode\":0,\"Output\":\"VERBOSE: Perform operation \\u0027Invoke CimMethod\\u0027 with following parameters, \\u0027\\u0027methodName\\u0027 \\u003d \\r\\nSendConfigurationApply,\\u0027className\\u0027 \\u003d MSFT_DSCLocalConfigurationManager,\\u0027namespaceName\\u0027 \\u003d \\r\\nroot/Microsoft/Windows/DesiredStateConfiguration\\u0027.\\nVERBOSE: An LCM method call arrived from computer EC2AMAZ-T194Q02 with user sid S-1-5-18.\\nVERBOSE: [EC2AMAZ-T194Q02]: LCM:  [ Start  Set      ]\\nVERBOSE: [EC2AMAZ-T194Q02]: LCM:  [ Start  Resource ]  [[NetAdapterName]RenameNetAdapterPrimary]\\nVERBOSE: [EC2AMAZ-T194Q02]: LCM:  [ Start  Test     ]  [[NetAdapterName]RenameNetAdapterPrimary]\\nVERBOSE: [EC2AMAZ-T194Q02]:                            [[NetAdapterName]RenameNetAdapterPrimary] Test-TargetResource: \\r\\nTesting the network adapter Name \\u0027Primary\\u0027.\\nVERBOSE: [EC2AMAZ-T194Q02]:                            [[NetAdapterName]RenameNetAdapterPrimary] Find-NetworkAdapter: \\r\\nFinding network adapters matching the parameters.\\nVERBOSE: [EC2AMAZ-T194Q02]:                            [[NetAdapterName]RenameNetAdapterPrimary] Test-TargetResource: \\r\\nFinding network adapter matching search criteria.\\nVERBOSE: [EC2AMAZ-T194Q02]:                            [[NetAdapterName]RenameNetAdapterPrimary] Find-NetworkAdapter: \\r\\nFinding network adapters matching the parameters.\\nVERBOSE: [EC2AMAZ-T194Q02]:                            [[NetAdapterName]RenameNetAdapterPrimary] Find-NetworkAdapter: 1\\r\\n network adapters were found matching the parameters.\\nVERBOSE: [EC2AMAZ-T194Q02]:                            [[NetAdapterName]RenameNetAdapterPrimary] Test-TargetResource: \\r\\nnetwork adapter Name \\u0027Ethernet 3\\u0027 does not match the adapter \\u0027Primary\\u0027 that was found. Rename required.\\nVERBOSE: [EC2AMAZ-T194Q02]: LCM:  [ End    Test     ]  [[NetAdapterName]RenameNetAdapterPrimary]  in 1.8790 seconds.\\nVERBOSE: [EC2AMAZ-T194Q02]: LCM:  [ Start  Set      ]  [[NetAdapterName]RenameNetAdapterPrimary]\\nVERBOSE: [EC2AMAZ-T194Q02]:                            [[NetAdapterName]RenameNetAdapterPrimary] Set-TargetResource: \\r\\nSetting the network adapter Name \\u0027Primary\\u0027.\\nVERBOSE: [EC2AMAZ-T194Q02]:                            [[NetAdapterName]RenameNetAdapterPrimary] Find-NetworkAdapter: \\r\\nFinding network adapters matching the parameters.\\nVERBOSE: [EC2AMAZ-T194Q02]:                            [[NetAdapterName]RenameNetAdapterPrimary] Find-NetworkAdapter: 1\\r\\n network adapters were found matching the parameters.\\nVERBOSE: [EC2AMAZ-T194Q02]:                            [[NetAdapterName]RenameNetAdapterPrimary] Set-TargetReso\\n---Output truncated---\",\"CommandId\":\"00ffe0fc-31a6-42ea-961b-88aedf6f6dfe\"}"
+                    ],
+                    "ResponseCode": [
+                        "0"
+                    ],
+                    "Status": [
+                        "Success"
+                    ]
+                },
+                "StepExecutionId": "fd1ceaea-f55d-47a4-8c1c-27732392c72f",
+                "OverriddenParameters": {},
+                "NextStep": "InstallSubCa",
+                "ValidNextSteps": [
+                    "InstallSubCa"
+                ]
+            },
+            {
+                "StepName": "InstallSubCa",
+                "Action": "aws:runCommand",
+                "OnFailure": "step:signalfailure",
+                "ExecutionStartTime": "2025-02-12T16:09:24.877000-05:00",
+                "ExecutionEndTime": "2025-02-12T16:12:55.957000-05:00",
+                "StepStatus": "Success",
+                "Inputs": {
+                    "CloudWatchOutputConfig": "{\"cloudWatchLogGroupName\":\"/aws/Quick_Start/ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-TwoTierCAStack-1UGJGQWV2MW8G\",\"cloudWatchOutputEnabled\":true}",
+                    "DocumentName": "\"AWS-RunPowerShellScript\"",
+                    "InstanceIds": "[\"i-0c705b20f40469720\"]",
+                    "Parameters": "{\"commands\":\"Try {\\n    Import-Module -Name 'C:\\\\AWSQuickstart\\\\Module-Pki\\\\Module-Pki.psm1' -Force\\n} Catch [System.Exception] {\\n    Write-Output \\\"Failed to import Pki PS Module $_\\\"\\n    Exit 1\\n}\\n$Secret = Get-SecretInfo -Domain 'QUICKSILVER' -SecretArn 'arn:aws:secretsmanager:us-east-1:396913736034:secret:ADAltUserSecrets-ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-SSbL8B'\\nInvoke-TwoTierSubCaInstall -Credentials $Secret.Credentials -DirectoryType 'SelfManaged' -S3CRLBucketName 'examplebucket' -SubCaCommonName 'QUICKSILVERCA2' -SubCaHashAlgorithm 'SHA256' -SubCaKeyLength '2048' -SubCaValidityPeriodUnits '5' -UseS3ForCRL 'No'\"}"
+                },
+                "Outputs": {
+                    "CommandId": [
+                        "ca2f2435-d641-4f62-af07-67c2743ee53e"
+                    ],
+                    "Output": [
+                        "Getting AD domain information\r\nGetting a Domain Controller to perform actions against\r\nAdding computer account to elevated permission group for install\r\nSleeping to ensure replication of group membership has completed\r\nClearing all SYSTEM Kerberos tickets\r\nCreating PKI CNAME record\r\nPKI CNAME record missing.\r\nCreating PKI folders\r\nSharing PKI folder\r\nCreating PKI IIS virtual directory\r\nSetting PKI IIS virtual directory requestFiltering\r\nSetting PKI IIS virtual directory directoryBrowse\r\nSetting PKI folder file system ACLs\r\nResetting IIS service\r\nCreating CAPolicy.inf\r\nCreating SubPkiSysvolPSDrive\r\nCreating the PkiSubCA SYSVOL folder\r\nCopying the SYSVOL PkiRootCA Contents to local folder\r\nPublishing Offline CA certificates and CRLs\r\nInstalling Subordinate CA\r\n\r\nErrorId ErrorString                                                                                                    \r\n------- -----------                                                                                                    \r\n    398 The Active Directory Certificate Services installation is incomplete. To complete the installation, use the ...\r\nCopying SubCa.req to PkiSubCA SYSVOL folder\r\nRemoving SubPkiSysvolPSDrive\r\n\r\n\r\n"
+                    ],
+                    "OutputPayload": [
+                        "{\"Status\":\"Success\",\"ResponseCode\":0,\"Output\":\"Getting AD domain information\\r\\nGetting a Domain Controller to perform actions against\\r\\nAdding computer account to elevated permission group for install\\r\\nSleeping to ensure replication of group membership has completed\\r\\nClearing all SYSTEM Kerberos tickets\\r\\nCreating PKI CNAME record\\r\\nPKI CNAME record missing.\\r\\nCreating PKI folders\\r\\nSharing PKI folder\\r\\nCreating PKI IIS virtual directory\\r\\nSetting PKI IIS virtual directory requestFiltering\\r\\nSetting PKI IIS virtual directory directoryBrowse\\r\\nSetting PKI folder file system ACLs\\r\\nResetting IIS service\\r\\nCreating CAPolicy.inf\\r\\nCreating SubPkiSysvolPSDrive\\r\\nCreating the PkiSubCA SYSVOL folder\\r\\nCopying the SYSVOL PkiRootCA Contents to local folder\\r\\nPublishing Offline CA certificates and CRLs\\r\\nInstalling Subordinate CA\\r\\n\\r\\nErrorId ErrorString                                                                                                    \\r\\n------- -----------                                                                                                    \\r\\n    398 The Active Directory Certificate Services installation is incomplete. To complete the installation, use the ...\\r\\nCopying SubCa.req to PkiSubCA SYSVOL folder\\r\\nRemoving SubPkiSysvolPSDrive\\r\\n\\r\\n\\r\\n\",\"CommandId\":\"ca2f2435-d641-4f62-af07-67c2743ee53e\"}"
+                    ],
+                    "ResponseCode": [
+                        "0"
+                    ],
+                    "Status": [
+                        "Success"
+                    ]
+                },
+                "StepExecutionId": "7cf8ea45-a973-4e48-b02d-6138cb782e9a",
+                "OverriddenParameters": {},
+                "NextStep": "CertIssueSubCa",
+                "ValidNextSteps": [
+                    "CertIssueSubCa"
+                ]
+            },
+            {
+                "StepName": "CertIssueSubCa",
+                "Action": "aws:runCommand",
+                "OnFailure": "step:signalfailure",
+                "ExecutionStartTime": "2025-02-12T16:12:56.155000-05:00",
+                "ExecutionEndTime": "2025-02-12T16:15:21.352000-05:00",
+                "StepStatus": "Success",
+                "Inputs": {
+                    "CloudWatchOutputConfig": "{\"cloudWatchLogGroupName\":\"/aws/Quick_Start/ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-TwoTierCAStack-1UGJGQWV2MW8G\",\"cloudWatchOutputEnabled\":true}",
+                    "DocumentName": "\"AWS-RunPowerShellScript\"",
+                    "InstanceIds": "[\"i-0cd0026f159056c20\"]",
+                    "Parameters": "{\"commands\":\"Try {\\n    Import-Module -Name 'C:\\\\AWSQuickstart\\\\Module-Pki\\\\Module-Pki.psm1' -Force\\n} Catch [System.Exception] {\\n    Write-Output \\\"Failed to import Pki PS Module $_\\\"\\n    Exit 1\\n}\\n$Secret = Get-SecretInfo -Domain 'quicksilver.aws.dev' -SecretArn 'arn:aws:secretsmanager:us-east-1:396913736034:secret:ADAltUserSecrets-ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-SSbL8B'\\nInvoke-TwoTierSubCaCertIssue -Credentials $Secret.Credentials -DirectoryType 'SelfManaged' -DomainDNSName 'quicksilver.aws.dev'\\n\\nIf ('false' -eq 'true') {\\n  Set-AuditDscConfiguration\\n  Set-LogsAndMetricsCollection -Stackname 'ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-TwoTierCAStack-1UGJGQWV2MW8G'\\n}                \\n\\nInvoke-Cleanup -VPCCIDR '10.2.0.0/16'\"}"
+                },
+                "Outputs": {
+                    "CommandId": [
+                        "4c7150e0-d7f0-4061-9728-95f6dfb155e8"
+                    ],
+                    "Output": [
+                        "Creating IssuePkiSysvolPSDrive\r\nCopying SubCa.req from PkiSubCA SYSVOL folder\r\nSubmitting, issuing and retrieving the SubCA certificate\r\nCopying SubCa.cer to PkiSubCA SYSVOL folder\r\nRemoving IssuePkiSysvolPSDrive\r\nRemoving SubCA certificate request files\r\nSetting Windows Firewall WinRM Public rule to allow VPC CIDR traffic\r\nRemoving DSC configuration\r\nRe-enabling Windows Firewall\r\nRemoving QuickStart build files\r\nRemoving self signed cert\r\n"
+                    ],
+                    "OutputPayload": [
+                        "{\"Status\":\"Success\",\"ResponseCode\":0,\"Output\":\"Creating IssuePkiSysvolPSDrive\\r\\nCopying SubCa.req from PkiSubCA SYSVOL folder\\r\\nSubmitting, issuing and retrieving the SubCA certificate\\r\\nCopying SubCa.cer to PkiSubCA SYSVOL folder\\r\\nRemoving IssuePkiSysvolPSDrive\\r\\nRemoving SubCA certificate request files\\r\\nSetting Windows Firewall WinRM Public rule to allow VPC CIDR traffic\\r\\nRemoving DSC configuration\\r\\nRe-enabling Windows Firewall\\r\\nRemoving QuickStart build files\\r\\nRemoving self signed cert\\r\\n\",\"CommandId\":\"4c7150e0-d7f0-4061-9728-95f6dfb155e8\"}"
+                    ],
+                    "ResponseCode": [
+                        "0"
+                    ],
+                    "Status": [
+                        "Success"
+                    ]
+                },
+                "StepExecutionId": "4944cfb7-175e-414a-85c5-5b38fac70358",
+                "OverriddenParameters": {},
+                "NextStep": "FinalizeSubCa",
+                "ValidNextSteps": [
+                    "FinalizeSubCa"
+                ]
+            },
+            {
+                "StepName": "FinalizeSubCa",
+                "Action": "aws:runCommand",
+                "OnFailure": "step:signalfailure",
+                "ExecutionStartTime": "2025-02-12T16:15:21.550000-05:00",
+                "ExecutionEndTime": "2025-02-12T16:20:20.289000-05:00",
+                "StepStatus": "Success",
+                "Inputs": {
+                    "CloudWatchOutputConfig": "{\"cloudWatchLogGroupName\":\"/aws/Quick_Start/ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-TwoTierCAStack-1UGJGQWV2MW8G\",\"cloudWatchOutputEnabled\":true}",
+                    "DocumentName": "\"AWS-RunPowerShellScript\"",
+                    "InstanceIds": "[\"i-0c705b20f40469720\"]",
+                    "Parameters": "{\"commands\":\"Try {\\n    Import-Module -Name 'C:\\\\AWSQuickstart\\\\Module-Pki\\\\Module-Pki.psm1' -Force\\n} Catch [System.Exception] {\\n    Write-Output \\\"Failed to import Pki PS Module $_\\\"\\n    Exit 1\\n}\\n$Secret = Get-SecretInfo -Domain QUICKSILVER -SecretArn arn:aws:secretsmanager:us-east-1:396913736034:secret:ADAltUserSecrets-ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-SSbL8B\\nInvoke-TwoTierSubCaConfig -Credentials $Secret.Credentials -DirectoryType 'SelfManaged' -S3CRLBucketName 'examplebucket' -UseS3ForCRL 'No'\\n\\nIf ('false' -eq 'true') {\\n  Set-AuditDscConfiguration\\n  Set-LogsAndMetricsCollection -Stackname 'ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-TwoTierCAStack-1UGJGQWV2MW8G'\\n}\\n\\nInvoke-Cleanup -VPCCIDR '10.2.0.0/16'\"}"
+                },
+                "Outputs": {
+                    "CommandId": [
+                        "f2b6875c-fc94-4c67-91db-20965049e98c"
+                    ],
+                    "Output": [
+                        "Getting AD domain information\r\nGetting a Domain Controller to perform actions against\r\nCreating CertPkiSysvolPSDrive\r\nCopying SubCa.cer from PkiSubCA SYSVOL folder\r\nInstalling SubCA certificate\r\nStarting CA service\r\nConfiguring CRL distro points\r\nConfiguring AIA distro points\r\nConfiguring Subordinate Enterprise CA\r\nRestarting CA service\r\nPublishing CRL\r\nCopying CRL to PKI folder\r\nRestarting CA service\r\nCreating LdapOverSSL-QS certificate template\r\nEnabling CredSSP\r\nSetting CredSSP registry entry CredentialsDelegation\r\nSetting CredSSP registry entry AllowFreshCredentials\r\nSetting CredSSP registry entry AllowFreshCredentialsWhenNTLMOnly\r\nSleeping to ensure replication of certificate template has completed\r\nCleaning up ACLs on LdapOverSSL-QS certificate template\r\nPublishing LdapOverSSL-QS template to allow enrollment\r\nLdapOverSSL-QS template missing adding it.\r\nSleeping to ensure replication of certificate template publish has completed\r\nDisabling CredSSP\r\nRemoving CredSSP registry entries\r\nGetting domain controllers\r\nRunning Group Policy update against all domain controllers\r\nCreating Update CRL Scheduled Task\r\nRunning CRL Scheduled Task\r\nRestarting CA service\r\nRemoving Subordinate CA Cert request files\r\nRemoving the PkiSubCA and PKIRootCA SYSVOL folders\r\nRemoving computer account from elevated groups\r\nClearing all SYSTEM kerberos tickets\r\nSetting Windows Firewall WinRM Public rule to allow VPC CIDR traffic\r\nRemoving DSC configuration\r\nRe-enabling Windows Firewall\r\nRemoving QuickStart build files\r\nRemoving self signed cert\r\n"
+                    ],
+                    "OutputPayload": [
+                        "{\"Status\":\"Success\",\"ResponseCode\":0,\"Output\":\"Getting AD domain information\\r\\nGetting a Domain Controller to perform actions against\\r\\nCreating CertPkiSysvolPSDrive\\r\\nCopying SubCa.cer from PkiSubCA SYSVOL folder\\r\\nInstalling SubCA certificate\\r\\nStarting CA service\\r\\nConfiguring CRL distro points\\r\\nConfiguring AIA distro points\\r\\nConfiguring Subordinate Enterprise CA\\r\\nRestarting CA service\\r\\nPublishing CRL\\r\\nCopying CRL to PKI folder\\r\\nRestarting CA service\\r\\nCreating LdapOverSSL-QS certificate template\\r\\nEnabling CredSSP\\r\\nSetting CredSSP registry entry CredentialsDelegation\\r\\nSetting CredSSP registry entry AllowFreshCredentials\\r\\nSetting CredSSP registry entry AllowFreshCredentialsWhenNTLMOnly\\r\\nSleeping to ensure replication of certificate template has completed\\r\\nCleaning up ACLs on LdapOverSSL-QS certificate template\\r\\nPublishing LdapOverSSL-QS template to allow enrollment\\r\\nLdapOverSSL-QS template missing adding it.\\r\\nSleeping to ensure replication of certificate template publish has completed\\r\\nDisabling CredSSP\\r\\nRemoving CredSSP registry entries\\r\\nGetting domain controllers\\r\\nRunning Group Policy update against all domain controllers\\r\\nCreating Update CRL Scheduled Task\\r\\nRunning CRL Scheduled Task\\r\\nRestarting CA service\\r\\nRemoving Subordinate CA Cert request files\\r\\nRemoving the PkiSubCA and PKIRootCA SYSVOL folders\\r\\nRemoving computer account from elevated groups\\r\\nClearing all SYSTEM kerberos tickets\\r\\nSetting Windows Firewall WinRM Public rule to allow VPC CIDR traffic\\r\\nRemoving DSC configuration\\r\\nRe-enabling Windows Firewall\\r\\nRemoving QuickStart build files\\r\\nRemoving self signed cert\\r\\n\",\"CommandId\":\"f2b6875c-fc94-4c67-91db-20965049e98c\"}"
+                    ],
+                    "ResponseCode": [
+                        "0"
+                    ],
+                    "Status": [
+                        "Success"
+                    ]
+                },
+                "StepExecutionId": "b423e989-138b-4b66-a3dd-062758b49a5f",
+                "OverriddenParameters": {},
+                "ValidNextSteps": [
+                    "CFNSignalEnd"
+                ]
+            },
+            {
+                "StepName": "CFNSignalEnd",
+                "Action": "aws:branch",
+                "ExecutionStartTime": "2025-02-12T16:20:20.496000-05:00",
+                "ExecutionEndTime": "2025-02-12T16:20:20.631000-05:00",
+                "StepStatus": "Success",
+                "Inputs": {
+                    "Choices": "[{\"Not\":{\"StringEquals\":\"\",\"Variable\":\"ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-TwoTierCAStack-1UGJGQWV2MW8G\"},\"NextStep\":\"signalsuccess\"},{\"StringEquals\":\"\",\"Variable\":\"ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-TwoTierCAStack-1UGJGQWV2MW8G\",\"NextStep\":\"sleepend\"}]"
+                },
+                "Outputs": {
+                    "NextStep": [
+                        "signalsuccess"
+                    ],
+                    "OutputPayload": [
+                        "{\"NextStep\":\"signalsuccess\"}"
+                    ]
+                },
+                "StepExecutionId": "886c2472-7f21-46db-9bf0-a1101dc60276",
+                "OverriddenParameters": {},
+                "ValidNextSteps": [
+                    "signalsuccess"
+                ]
+            },
+            {
+                "StepName": "signalsuccess",
+                "Action": "aws:executeAwsApi",
+                "ExecutionStartTime": "2025-02-12T16:20:20.855000-05:00",
+                "ExecutionEndTime": "2025-02-12T16:20:21.145000-05:00",
+                "StepStatus": "Success",
+                "Inputs": {
+                    "Api": "\"SignalResource\"",
+                    "LogicalResourceId": "\"SubCA\"",
+                    "Service": "\"cloudformation\"",
+                    "StackName": "\"ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-TwoTierCAStack-1UGJGQWV2MW8G\"",
+                    "Status": "\"SUCCESS\"",
+                    "UniqueId": "\"i-0c705b20f40469720\""
+                },
+                "Outputs": {},
+                "StepExecutionId": "15d994b7-5135-4398-8bd2-122ca6011a75",
+                "OverriddenParameters": {},
+                "IsEnd": true
+            },
+            {
+                "StepName": "sleepend",
+                "Action": "aws:sleep",
+                "StepStatus": "Pending",
+                "Inputs": {},
+                "StepExecutionId": "b613b6de-8f3f-4b18-af2a-7c380d6bebf5",
+                "OverriddenParameters": {},
+                "IsEnd": true
+            },
+            {
+                "StepName": "signalfailure",
+                "Action": "aws:executeAwsApi",
+                "StepStatus": "Pending",
+                "Inputs": {},
+                "StepExecutionId": "dd4036c1-34af-4d51-8925-382569a4e1c9",
+                "OverriddenParameters": {}
+            }
+        ],
+        "StepExecutionsTruncated": false,
+        "Parameters": {
+            "AdministratorSecret": [
+                "arn:aws:secretsmanager:us-east-1:396913736034:secret:ADAltUserSecrets-ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-SSbL8B"
+            ],
+            "DirectoryType": [
+                "SelfManaged"
+            ],
+            "DomainController1IP": [
+                "10.2.0.10"
+            ],
+            "DomainController2IP": [
+                "10.2.1.10"
+            ],
+            "DomainDNSName": [
+                "quicksilver.aws.dev"
+            ],
+            "DomainNetBIOSName": [
+                "QUICKSILVER"
+            ],
+            "EnableAdvancedAudtingandMetrics": [
+                "false"
+            ],
+            "OrCaHashAlgorithm": [
+                "SHA256"
+            ],
+            "OrCaKeyLength": [
+                "2048"
+            ],
+            "OrCaServerNetBIOSName": [
+                "QUICKSILVERCA1"
+            ],
+            "OrCaValidityPeriodUnits": [
+                "10"
+            ],
+            "QSS3BucketName": [
+                "quicksilver-aws-ia"
+            ],
+            "QSS3BucketRegion": [
+                "us-east-1"
+            ],
+            "QSS3KeyPrefix": [
+                "cfn-ps-microsoft-activedirectory/submodules/cfn-ps-microsoft-pki/"
+            ],
+            "S3CRLBucketName": [
+                "examplebucket"
+            ],
+            "StackName": [
+                "ActiveDirectory-SharedServices-10-2-0-0-16-QuickSilver-TwoTierCAStack-1UGJGQWV2MW8G"
+            ],
+            "SubCaHashAlgorithm": [
+                "SHA256"
+            ],
+            "SubCaKeyLength": [
+                "2048"
+            ],
+            "SubCaServerNetBIOSName": [
+                "QUICKSILVERCA2"
+            ],
+            "SubCaValidityPeriodUnits": [
+                "5"
+            ],
+            "URLSuffix": [
+                "amazonaws.com"
+            ],
+            "UseS3ForCRL": [
+                "No"
+            ],
+            "VPCCIDR": [
+                "10.2.0.0/16"
+            ]
+        },
+        "Outputs": {},
+        "Mode": "Auto",
+        "ExecutedBy": "arn:aws:sts::396913736034:assumed-role/ActiveDirectory-SharedServices-10-2-0--InstanceRole-eslNmXaNfXDE/i-0c705b20f40469720",
+        "Targets": [],
+        "ResolvedTargets": {
+            "ParameterValues": [],
+            "Truncated": false
+        }
+    }
+}
