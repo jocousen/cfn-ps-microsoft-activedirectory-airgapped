@@ -1,9 +1,9 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >-
   This template creates Microsoft Active Directory (AD) with Two-Tier PKI infrastructure 
-  inside an AWS VPC. **WARNING** This template creates Amazon EC2 Windows instances and 
-  related resources. You will be billed for the AWS resources used if you create a stack 
-  from this template.
+  inside an AWS VPC. This template creates Amazon EC2 Windows instances and related 
+  resources. You will be billed for the AWS resources used if you create a stack 
+  from this template. (qs-1qup6ra8q)
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -31,6 +31,7 @@ Metadata:
           - ADServer2InstanceType
           - WindowsServerAMI
           - DataDriveSizeGiB
+          - InstallRSAT
       - Label:
           default: Microsoft PKI Configuration
         Parameters:
@@ -49,232 +50,323 @@ Metadata:
           - QSS3KeyPrefix
           - EbsEncryptionKmsKeyId
           - KeyPairName
-
+    ParameterLabels:
+      VPCID:
+        default: VPC ID
+      VPCCIDR:
+        default: VPC CIDR
+      PrivateSubnet1ID:
+        default: Private Subnet 1 ID
+      PrivateSubnet2ID:
+        default: Private Subnet 2 ID
+      DHCPOptionSet:
+        default: Create DHCP Options Set
+      DomainDNSName:
+        default: Domain DNS Name
+      DomainNetBIOSName:
+        default: Domain NetBIOS Name
+      DomainAdminUser:
+        default: Domain Admin User
+      DomainAdminPassword:
+        default: Domain Admin Password
+      ADServer1NetBIOSName:
+        default: AD Server 1 NetBIOS Name
+      ADServer1PrivateIP:
+        default: AD Server 1 Private IP
+      ADServer2NetBIOSName:
+        default: AD Server 2 NetBIOS Name
+      ADServer2PrivateIP:
+        default: AD Server 2 Private IP
+      ADServer1InstanceType:
+        default: AD Server 1 Instance Type
+      ADServer2InstanceType:
+        default: AD Server 2 Instance Type
+      WindowsServerAMI:
+        default: Windows Server AMI
+      DataDriveSizeGiB:
+        default: Data Drive Size
+      InstallRSAT:
+        default: Install RSAT
+      PKI:
+        default: PKI Infrastructure
+      CaKeyLength:
+        default: CA Key Length
+      CaHashAlgorithm:
+        default: CA Hash Algorithm
+      CaValidityPeriodUnits:
+        default: CA Validity Period (Years)
+      OrCaValidityPeriodUnits:
+        default: Offline Root CA Validity Period (Years)
+      UseS3ForCRL:
+        default: Use S3 for CRL
+      S3CRLBucketName:
+        default: S3 CRL Bucket Name
+      QSS3BucketName:
+        default: Quick Start S3 Bucket Name
+      QSS3BucketRegion:
+        default: Quick Start S3 Bucket Region
+      QSS3KeyPrefix:
+        default: Quick Start S3 Key Prefix
+      EbsEncryptionKmsKeyId:
+        default: EBS Encryption KMS Key ID
+      KeyPairName:
+        default: Key Pair Name
 Parameters:
   VPCID:
     Type: AWS::EC2::VPC::Id
     Description: ID of the VPC (e.g., vpc-0343606e)
-
   VPCCIDR:
     Type: String
-    Description: CIDR block for private subnet 1 located in Availability Zone 1.
-    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$
-
+    Description: CIDR block for the VPC
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
   PrivateSubnet1ID:
     Type: AWS::EC2::Subnet::Id
-    Description: ID of the private subnet 1 in Availability Zone 1 (e.g., subnet-a0246dcd)
-
+    Description: ID of the private subnet 1 in Availability Zone 1
   PrivateSubnet2ID:
     Type: AWS::EC2::Subnet::Id
-    Description: ID of the private subnet 2 in Availability Zone 2 (e.g., subnet-b1f432cd)
-
+    Description: ID of the private subnet 2 in Availability Zone 2
   DHCPOptionSet:
-    Type: String
     AllowedValues:
       - 'Yes'
       - 'No'
     Default: 'Yes'
-    Description: Create a DHCP Options set
-
-  DomainDNSName:
+    Description: Create a DHCP Options Set
     Type: String
+  DomainDNSName:
+    AllowedPattern: '[a-zA-Z0-9\-]+\..+'
     Default: example.com
     Description: Fully qualified domain name (FQDN) of the forest root domain
-    AllowedPattern: '[a-zA-Z0-9\-]+\..+'
-
-  DomainNetBIOSName:
+    MaxLength: '255'
+    MinLength: '2'
     Type: String
+  DomainNetBIOSName:
+    AllowedPattern: '[a-zA-Z0-9\-]+'
     Default: example
     Description: NetBIOS name of the domain (up to 15 characters)
-    AllowedPattern: '[a-zA-Z0-9\-]+'
-    MaxLength: 15
-
+    MaxLength: '15'
+    MinLength: '1'
+    Type: String
   DomainAdminUser:
-    Type: String
-    Default: Admin
-    Description: User name for the account that will be added as Domain Administrator. This is separate from the default "Administrator" account
     AllowedPattern: '[a-zA-Z0-9]*'
-
+    Default: Admin
+    Description: User name for the account that will be added as Domain Administrator. Must be at least 5 characters.
+    MaxLength: '25'
+    MinLength: '5'
+    Type: String
   DomainAdminPassword:
-    Type: String
-    Description: Password for the domain admin user. Must be at least 8 characters containing letters, numbers and symbols
-    MinLength: 8
-    MaxLength: 32
     AllowedPattern: (?=^.{6,255}$)((?=.*\d)(?=.*[A-Z])(?=.*[a-z])|(?=.*\d)(?=.*[^A-Za-z0-9])(?=.*[a-z])|(?=.*[^A-Za-z0-9])(?=.*[A-Z])(?=.*[a-z])|(?=.*\d)(?=.*[A-Z])(?=.*[^A-Za-z0-9]))^.*
+    Description: Password for the domain admin user. Must be at least 8 characters containing letters, numbers and symbols
+    MaxLength: '32'
+    MinLength: '8'
     NoEcho: true
-
+    Type: String
   ADServer1NetBIOSName:
-    Type: String
+    AllowedPattern: '[a-zA-Z0-9\-]+'
     Default: DC1
-    Description: NetBIOS name of the first Active Directory server (up to 15 characters)
-    AllowedPattern: '[a-zA-Z0-9\-]+'
-    MaxLength: 15
-
+    Description: NetBIOS name of the first AD server (up to 15 characters)
+    MaxLength: '15'
+    MinLength: '1'
+    Type: String
   ADServer1PrivateIP:
-    Type: String
-    Default: 10.0.0.10
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$
     Description: Fixed private IP for the first Active Directory server located in Availability Zone 1
-    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$
-
+    Type: String
   ADServer2NetBIOSName:
-    Type: String
-    Default: DC2
-    Description: NetBIOS name of the second Active Directory server (up to 15 characters)
     AllowedPattern: '[a-zA-Z0-9\-]+'
-    MaxLength: 15
-
+    Default: DC2
+    Description: NetBIOS name of the second AD server (up to 15 characters)
+    MaxLength: '15'
+    MinLength: '1'
+    Type: String
   ADServer2PrivateIP:
-    Type: String
-    Default: 10.0.32.10
-    Description: Fixed private IP for the second Active Directory server located in Availability Zone 2
     AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$
-
+    Description: Fixed private IP for the second Active Directory server located in Availability Zone 2
+    Type: String
   ADServer1InstanceType:
-    Type: String
-    Default: t3.large
     AllowedValues:
       - t3.large
       - m5.large
       - m5.xlarge
       - m5.2xlarge
       - m5.4xlarge
-    Description: Amazon EC2 instance type for the first Active Directory server
-
+    Default: m5.xlarge
+    Description: Amazon EC2 instance type for the first Active Directory instance
+    Type: String
   ADServer2InstanceType:
-    Type: String
-    Default: t3.large
     AllowedValues:
       - t3.large
       - m5.large
       - m5.xlarge
       - m5.2xlarge
       - m5.4xlarge
-    Description: Amazon EC2 instance type for the second Active Directory server
-
+    Default: m5.xlarge
+    Description: Amazon EC2 instance type for the second Active Directory instance
+    Type: String
   WindowsServerAMI:
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/ami-windows-latest/Windows_Server-2022-English-Full-Base
-    Description: AWS Systems Manager Parameter Store parameter of the AMI ID for Windows Server
-
+    Default: /aws/service/ami-windows-latest/Windows_Server-2019-English-Full-Base
+    Description: SSM parameter to fetch the latest Windows Server AMI ID
   DataDriveSizeGiB:
     Type: Number
-    Default: 100
+    Default: '100'
     Description: Size of the Data Drive in GiB
-
-  PKI:
-    Type: String
-    AllowedValues:
-      - 'Two-Tier'
-      - 'No'
-    Default: 'Two-Tier'
-    Description: Deploy PKI Infrastructure
-
-  CaKeyLength:
-    Type: String
-    AllowedValues:
-      - '2048'
-      - '4096'
-    Default: '2048'
-    Description: Key length for CA certificates
-
-  CaHashAlgorithm:
-    Type: String
-    AllowedValues:
-      - 'SHA256'
-      - 'SHA384'
-      - 'SHA512'
-    Default: 'SHA256'
-    Description: Hash Algorithm for CA certificates
-
-  CaValidityPeriodUnits:
-    Type: Number
-    Default: 5
-    Description: Validity period in years for CA certificates (1-20)
-    MinValue: 1
-    MaxValue: 20
-
-  OrCaValidityPeriodUnits:
-    Type: Number
-    Default: 2
-    Description: Validity period in years for Offline Root CA certificate (1-20)
-    MinValue: 1
-    MaxValue: 20
-
-  UseS3ForCRL:
-    Type: String
+  InstallRSAT:
     AllowedValues:
       - 'Yes'
       - 'No'
     Default: 'No'
-    Description: Use S3 for Certificate Revocation List (CRL)
-
+    Description: Install Remote Server Administration Tools
+    Type: String
+  PKI:
+    AllowedValues:
+      - 'No'
+      - 'Two-Tier'
+    Default: 'Two-Tier'
+    Description: Deploy PKI Infrastructure
+    Type: String
+  CaKeyLength:
+    AllowedValues:
+      - '2048'
+      - '4096'
+    Default: '2048'
+    Description: CA Key Length
+    Type: String
+  CaHashAlgorithm:
+    AllowedValues:
+      - SHA256
+      - SHA384
+      - SHA512
+    Default: SHA256
+    Description: CA Hash Algorithm
+    Type: String
+  CaValidityPeriodUnits:
+    Default: '5'
+    Description: Validity Period in Years
+    Type: String
+  OrCaValidityPeriodUnits:
+    Default: '10'
+    Description: Validity Period in Years
+    Type: String
+  UseS3ForCRL:
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+    Default: 'No'
+    Description: Use S3 for CRL location
+    Type: String
   S3CRLBucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    Default: examplebucket
+    Description: S3 bucket name for CRL location
     Type: String
-    Default: ''
-    Description: S3 bucket name for Certificate Revocation List (CRL)
-
   QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+    Default: aws-quickstart
+    Description: S3 bucket name for the Quick Start assets
     Type: String
-    Description: Name of the S3 bucket for your copy of the Quick Start assets
-    ConstraintDescription: Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-)
-
   QSS3BucketRegion:
-    Type: String
-    Description: AWS Region where the Quick Start S3 bucket (QSS3BucketName) is hosted
     Default: us-east-1
-
-  QSS3KeyPrefix:
+    Description: AWS Region where the Quick Start S3 bucket exists
     Type: String
-    Description: S3 key prefix for the Quick Start assets
+  QSS3KeyPrefix:
+    AllowedPattern: ^([0-9a-zA-Z-.]+/)*$
     Default: quickstart-microsoft-activedirectory/
-    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters, uppercase letters, hyphens (-), dots (.) and forward slash (/)
-
+    Description: S3 key prefix for the Quick Start assets
+    Type: String
   EbsEncryptionKmsKeyId:
     Type: String
     Default: ''
-    Description: (Optional) KMS key ID or ARN to encrypt EBS volumes. Leave blank to use account default CMK
-
+    Description: KMS key ID or ARN for EBS encryption
   KeyPairName:
+    Description: Name of an existing EC2 key pair
     Type: AWS::EC2::KeyPair::KeyName
-    Description: Name of an existing EC2 key pair to enable RDP access to the instances
-
 Conditions:
   CreateDHCPOptions: !Equals 
     - !Ref DHCPOptionSet
     - 'Yes'
-  
   DeployPKI: !Equals 
     - !Ref PKI
     - 'Two-Tier'
-
   UseS3CRL: !Equals 
     - !Ref UseS3ForCRL
     - 'Yes'
-
   UsingDefaultBucket: !Equals 
     - !Ref QSS3BucketName
     - 'aws-quickstart'
-
-  HasKmsKey: !Not 
-    - !Equals 
-      - !Ref EbsEncryptionKmsKeyId
-      - ''
+  HasKmsKey: !Not [!Equals [!Ref EbsEncryptionKmsKeyId, '']]
 
 Resources:
-  S3CRLBucketValidation:
-    Type: AWS::CloudFormation::WaitCondition
-    Condition: UseS3CRL
+  ADServerRole:
+    Type: AWS::IAM::Role
     Properties:
-      Count: 0
-      Handle: !Sub ${AWS::StackName}-handle
-      Timeout: 1
+      Policies:
+        - PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:s3:::${QSS3BucketName}/${QSS3KeyPrefix}*'
+                  - !Sub 'arn:${AWS::Partition}:s3:::${QSS3BucketName}'
+                Effect: Allow
+          PolicyName: aws-quick-start-s3-policy
+        - PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - s3:GetObject
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:s3:::${QSS3BucketName}/${QSS3KeyPrefix}submodules/cfn-ps-microsoft-pki/*'
+                Effect: Allow
+          PolicyName: aws-quick-start-pki-policy
+        - PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - secretsmanager:GetSecretValue
+                  - secretsmanager:DescribeSecret
+                Resource: 
+                  - !Ref ADAdminSecrets
+                  - !Ref ADAltUserSecrets
+                  - !Ref ADServer1Secrets
+                  - !Ref ADServer2Secrets
+                Effect: Allow
+          PolicyName: aws-quick-start-secretsmanager-policy
+        - PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - ssm:StartAutomationExecution
+                  - ssm:GetAutomationExecution
+                  - ssm:SendCommand
+                  - ssm:GetCommandInvocation
+                Resource: 
+                  - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:automation-definition/*'
+                  - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/AWS-RunPowerShellScript'
+                  - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/AWSQuickStart*'
+                  - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:managed-instance/*'
+                Effect: Allow
+          PolicyName: aws-quick-start-ssm-policy
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action: sts:AssumeRole
+            Principal:
+              Service: ec2.amazonaws.com
+            Effect: Allow
+      ManagedPolicyArns:
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/CloudWatchAgentServerPolicy'
 
-  ADAdminSecrets:
-    Type: AWS::SecretsManager::Secret
+  ADServerProfile:
+    Type: AWS::IAM::InstanceProfile
     Properties:
-      Name: !Sub 'AD/Admin/${AWS::StackName}'
-      Description: 'AD Admin Credentials'
-      SecretString: !Sub '{"username":"${DomainAdminUser}","password":"${DomainAdminPassword}"}'
+      Path: /
+      Roles:
+        - !Ref ADServerRole
 
   DomainControllerSG:
     Type: AWS::EC2::SecurityGroup
@@ -284,7 +376,7 @@ Resources:
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 5985
-          ToPort: 5986
+          ToPort: 5985
           CidrIp: !Ref VPCCIDR
           Description: Windows Remote Management
         - IpProtocol: tcp
@@ -308,140 +400,306 @@ Resources:
           CidrIp: !Ref VPCCIDR
           Description: Kerberos
         - IpProtocol: tcp
-          FromPort: 445
-          ToPort: 445
+          FromPort: 123
+          ToPort: 123
           CidrIp: !Ref VPCCIDR
-          Description: SMB
+          Description: Windows Time
         - IpProtocol: udp
-          FromPort: 445
-          ToPort: 445
+          FromPort: 123
+          ToPort: 123
           CidrIp: !Ref VPCCIDR
-          Description: SMB
-        - IpProtocol: tcp
-          FromPort: 389
-          ToPort: 389
-          CidrIp: !Ref VPCCIDR
-          Description: LDAP
-        - IpProtocol: udp
-          FromPort: 389
-          ToPort: 389
-          CidrIp: !Ref VPCCIDR
-          Description: LDAP
-        - IpProtocol: tcp
-          FromPort: 636
-          ToPort: 636
-          CidrIp: !Ref VPCCIDR
-          Description: LDAPS
-        - IpProtocol: tcp
-          FromPort: 3268
-          ToPort: 3269
-          CidrIp: !Ref VPCCIDR
-          Description: LDAP GC/LDAPS GC
-        - IpProtocol: tcp
-          FromPort: 9389
-          ToPort: 9389
-          CidrIp: !Ref VPCCIDR
-          Description: SOAP
+          Description: Windows Time
         - IpProtocol: tcp
           FromPort: 135
           ToPort: 135
           CidrIp: !Ref VPCCIDR
-          Description: RPC
+          Description: RPC Endpoint Mapper
+        - IpProtocol: tcp
+          FromPort: 389
+          ToPort: 389
+          CidrIp: !Ref VPCCIDR
+          Description: LDAP
+        - IpProtocol: udp
+          FromPort: 389
+          ToPort: 389
+          CidrIp: !Ref VPCCIDR
+          Description: LDAP
+        - IpProtocol: tcp
+          FromPort: 445
+          ToPort: 445
+          CidrIp: !Ref VPCCIDR
+          Description: SMB
+        - IpProtocol: udp
+          FromPort: 445
+          ToPort: 445
+          CidrIp: !Ref VPCCIDR
+          Description: SMB
+        - IpProtocol: tcp
+          FromPort: 464
+          ToPort: 464
+          CidrIp: !Ref VPCCIDR
+          Description: Kerberos Change/Set password
+        - IpProtocol: udp
+          FromPort: 464
+          ToPort: 464
+          CidrIp: !Ref VPCCIDR
+          Description: Kerberos Change/Set password
+        - IpProtocol: tcp
+          FromPort: 636
+          ToPort: 636
+          CidrIp: !Ref VPCCIDR
+          Description: LDAP SSL
+        - IpProtocol: tcp
+          FromPort: 3268
+          ToPort: 3268
+          CidrIp: !Ref VPCCIDR
+          Description: LDAP GC
+        - IpProtocol: tcp
+          FromPort: 3269
+          ToPort: 3269
+          CidrIp: !Ref VPCCIDR
+          Description: LDAP GC SSL
+        - IpProtocol: tcp
+          FromPort: 9389
+          ToPort: 9389
+          CidrIp: !Ref VPCCIDR
+          Description: MCAS
         - IpProtocol: tcp
           FromPort: 49152
           ToPort: 65535
           CidrIp: !Ref VPCCIDR
-          Description: RPC Random Ports
-        - IpProtocol: tcp
-          FromPort: 3389
-          ToPort: 3389
+          Description: RPC Dynamic Ports
+        - IpProtocol: udp
+          FromPort: 49152
+          ToPort: 65535
           CidrIp: !Ref VPCCIDR
-          Description: RDP
+          Description: RPC Dynamic Ports
       Tags:
         - Key: Name
           Value: DomainControllerSG
 
-  DomainMemberSG:
+  DomainControllerInternalSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Domain Member Security Group
+      GroupDescription: Domain Controller Internal Communication
       VpcId: !Ref VPCID
       SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 5985
-          ToPort: 5986
-          CidrIp: !Ref VPCCIDR
-          Description: Windows Remote Management
-        - IpProtocol: tcp
-          FromPort: 3389
-          ToPort: 3389
-          CidrIp: !Ref VPCCIDR
-          Description: RDP
+        - IpProtocol: -1
+          FromPort: -1
+          ToPort: -1
+          SourceSecurityGroupId: !Ref DomainControllerSG
+          Description: All traffic between Domain Controllers
       Tags:
         - Key: Name
-          Value: DomainMemberSG
-
-  DomainControllerRole:
-    Type: AWS::IAM::Role
+          Value: DomainControllerInternalSG
+  ADAdminSecrets:
+    Type: AWS::SecretsManager::Secret
     Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: ec2.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - !Sub arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore
-        - !Sub arn:${AWS::Partition}:iam::aws:policy/CloudWatchAgentServerPolicy
-      Policies:
-        - PolicyName: AWS-Hybrid-AD-S3-Access
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action: s3:GetObject
-                Resource: 
-                  - !Sub arn:${AWS::Partition}:s3:::${QSS3BucketName}/${QSS3KeyPrefix}*
-                  - !Sub arn:${AWS::Partition}:s3:::${QSS3BucketName}/*
-        - PolicyName: AWS-Hybrid-AD-Secrets-Access
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - secretsmanager:GetSecretValue
-                  - secretsmanager:DescribeSecret
-                Resource: !Ref ADAdminSecrets
+      Name: !Sub 'AD-Admin-${AWS::StackName}'
+      Description: 'AD Admin Credentials'
+      SecretString: !Sub '{"username":"${DomainAdminUser}","password":"${DomainAdminPassword}"}'
 
-  DomainControllerInstanceProfile:
-    Type: AWS::IAM::InstanceProfile
+  ADAltUserSecrets:
+    Type: AWS::SecretsManager::Secret
     Properties:
-      Path: /
-      Roles: 
-        - !Ref DomainControllerRole
+      Name: !Sub 'AD-AltUser-${AWS::StackName}'
+      Description: 'AD Alternate User Credentials'
+      SecretString: !Sub '{"username":"Administrator","password":"${DomainAdminPassword}"}'
 
+  ADServer1Secrets:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub 'AD-${ADServer1NetBIOSName}-${AWS::StackName}'
+      Description: 'AD Server1 Instance Information'
+      SecretString: !Sub '{"username":"Administrator","password":"${DomainAdminPassword}"}'
+
+  ADServer2Secrets:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub 'AD-${ADServer2NetBIOSName}-${AWS::StackName}'
+      Description: 'AD Server2 Instance Information'
+      SecretString: !Sub '{"username":"Administrator","password":"${DomainAdminPassword}"}'
+
+  DomainJoinSecrets:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/ad/${AWS::StackName}/domain-join'
+      Type: String
+      Value: !Sub '{"domain":"${DomainDNSName}","username":"${DomainNetBIOSName}\\${DomainAdminUser}","password":"${DomainAdminPassword}"}'
+
+  AWSQuickStartInstanceConfiguration:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      Content:
+        schemaVersion: '0.3'
+        description: 'Configure Windows Instance'
+        parameters:
+          InstanceId:
+            description: 'Instance ID'
+            type: String
+          Locale:
+            description: 'Windows locale'
+            type: String
+            default: 'en-US'
+          TimeZone:
+            description: 'Windows time zone'
+            type: String
+            default: 'UTC'
+        mainSteps:
+          - name: ConfigureInstance
+            action: 'aws:runCommand'
+            inputs:
+              DocumentName: AWS-RunPowerShellScript
+              InstanceIds:
+                - '{{ InstanceId }}'
+              Parameters:
+                commands:
+                  - |
+                    Set-TimeZone -Id "{{ TimeZone }}"
+                    Set-WinSystemLocale -SystemLocale "{{ Locale }}"
+                    Set-WinUserLanguageList -LanguageList "{{ Locale }}" -Force
+                    Restart-Computer -Force
+
+  AWSQuickStartActiveDirectoryDS:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      Content:
+        schemaVersion: '0.3'
+        description: 'Deploy AD DS'
+        parameters:
+          InstanceId:
+            description: 'Instance ID'
+            type: String
+          DomainDNSName:
+            description: 'Fully qualified domain name (FQDN) of the forest root domain'
+            type: String
+          DomainNetBIOSName:
+            description: 'NetBIOS name of the domain'
+            type: String
+          DomainAdminUser:
+            description: 'User name for the account that will be added as Domain Administrator'
+            type: String
+          DomainAdminPassword:
+            description: 'Password for the domain admin user'
+            type: String
+          SafeModePassword:
+            description: 'Password for safe mode administration'
+            type: String
+          ADServer1NetBIOSName:
+            description: 'NetBIOS name of the first AD server'
+            type: String
+          InstallRSAT:
+            description: 'Install RSAT'
+            type: String
+        mainSteps:
+          - name: InstallADDS
+            action: 'aws:runCommand'
+            inputs:
+              DocumentName: AWS-RunPowerShellScript
+              InstanceIds:
+                - '{{ InstanceId }}'
+              Parameters:
+                commands:
+                  - |
+                    $ErrorActionPreference = "Stop"
+                    Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
+                    $SecureString = ConvertTo-SecureString '{{ DomainAdminPassword }}' -AsPlainText -Force
+                    $SafeModeSecureString = ConvertTo-SecureString '{{ SafeModePassword }}' -AsPlainText -Force
+                    Install-ADDSForest `
+                      -DomainName '{{ DomainDNSName }}' `
+                      -DomainNetbiosName '{{ DomainNetBIOSName }}' `
+                      -SafeModeAdministratorPassword $SafeModeSecureString `
+                      -CreateDnsDelegation:$false `
+                      -DatabasePath "C:\Windows\NTDS" `
+                      -LogPath "C:\Windows\NTDS" `
+                      -SysvolPath "C:\Windows\SYSVOL" `
+                      -InstallDns:$true `
+                      -NoRebootOnCompletion:$true `
+                      -Force:$true
+                    if ('{{ InstallRSAT }}' -eq 'Yes') {
+                        Install-WindowsFeature -Name RSAT -IncludeAllSubFeature
+                    }
+                    Rename-Computer -NewName '{{ ADServer1NetBIOSName }}' -Force
+                    Restart-Computer -Force
+
+  AWSQuickStartActiveDirectoryDC:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Automation
+      Content:
+        schemaVersion: '0.3'
+        description: 'Join Domain Controller to existing domain'
+        parameters:
+          InstanceId:
+            description: 'Instance ID'
+            type: String
+          DomainDNSName:
+            description: 'Fully qualified domain name (FQDN) of the forest root domain'
+            type: String
+          DomainAdminUser:
+            description: 'User name for the account that will be added as Domain Administrator'
+            type: String
+          DomainAdminPassword:
+            description: 'Password for the domain admin user'
+            type: String
+          SafeModePassword:
+            description: 'Password for safe mode administration'
+            type: String
+          ADServer2NetBIOSName:
+            description: 'NetBIOS name of the second AD server'
+            type: String
+          InstallRSAT:
+            description: 'Install RSAT'
+            type: String
+        mainSteps:
+          - name: JoinDomain
+            action: 'aws:runCommand'
+            inputs:
+              DocumentName: AWS-RunPowerShellScript
+              InstanceIds:
+                - '{{ InstanceId }}'
+              Parameters:
+                commands:
+                  - |
+                    $ErrorActionPreference = "Stop"
+                    Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
+                    $SecureString = ConvertTo-SecureString '{{ DomainAdminPassword }}' -AsPlainText -Force
+                    $Credential = New-Object System.Management.Automation.PSCredential('{{ DomainAdminUser }}', $SecureString)
+                    $SafeModeSecureString = ConvertTo-SecureString '{{ SafeModePassword }}' -AsPlainText -Force
+                    Install-ADDSDomainController `
+                      -DomainName '{{ DomainDNSName }}' `
+                      -Credential $Credential `
+                      -SafeModeAdministratorPassword $SafeModeSecureString `
+                      -DatabasePath "C:\Windows\NTDS" `
+                      -LogPath "C:\Windows\NTDS" `
+                      -SysvolPath "C:\Windows\SYSVOL" `
+                      -NoRebootOnCompletion:$true `
+                      -Force:$true
+                    if ('{{ InstallRSAT }}' -eq 'Yes') {
+                        Install-WindowsFeature -Name RSAT -IncludeAllSubFeature
+                    }
+                    Rename-Computer -NewName '{{ ADServer2NetBIOSName }}' -Force
+                    Restart-Computer -Force
   DHCPOptions:
-    Condition: CreateDHCPOptions
     Type: AWS::EC2::DHCPOptions
+    Condition: CreateDHCPOptions
     Properties:
       DomainName: !Ref DomainDNSName
       DomainNameServers: 
         - !Ref ADServer1PrivateIP
         - !Ref ADServer2PrivateIP
       Tags:
-        - Key: Name
-          Value: !Sub ${AWS::StackName}-DHCPOptions
+        - Key: Domain
+          Value: !Ref DomainDNSName
 
   VPCDHCPOptionsAssociation:
-    Condition: CreateDHCPOptions
     Type: AWS::EC2::VPCDHCPOptionsAssociation
+    Condition: CreateDHCPOptions
     Properties:
       VpcId: !Ref VPCID
       DhcpOptionsId: !Ref DHCPOptions
-
-  ADServer1Handle:
-    Type: AWS::CloudFormation::WaitConditionHandle
 
   ADServer1:
     Type: AWS::EC2::Instance
@@ -450,9 +708,10 @@ Resources:
       InstanceType: !Ref ADServer1InstanceType
       SubnetId: !Ref PrivateSubnet1ID
       PrivateIpAddress: !Ref ADServer1PrivateIP
-      IamInstanceProfile: !Ref DomainControllerInstanceProfile
+      IamInstanceProfile: !Ref ADServerProfile
       SecurityGroupIds: 
         - !Ref DomainControllerSG
+        - !Ref DomainControllerInternalSG
       KeyName: !Ref KeyPairName
       BlockDeviceMappings:
         - DeviceName: /dev/sda1
@@ -467,63 +726,42 @@ Resources:
             VolumeType: gp3
             Encrypted: true
             KmsKeyId: !If [HasKmsKey, !Ref EbsEncryptionKmsKeyId, !Ref 'AWS::NoValue']
+      UserData: 
+        Fn::Base64: !Sub |
+          <powershell>
+          $instanceId = (Invoke-WebRequest -Uri http://169.254.169.254/latest/meta-data/instance-id -UseBasicParsing).Content
+          Start-SSMAutomationExecution -DocumentName 'AWSQuickStartInstanceConfiguration' -Parameter @{
+            'InstanceId'=$instanceId
+            'TimeZone'='UTC'
+            'Locale'='en-US'
+          }
+          Start-SSMAutomationExecution -DocumentName 'AWSQuickStartActiveDirectoryDS' -Parameter @{
+            'InstanceId'=$instanceId
+            'DomainDNSName'='${DomainDNSName}'
+            'DomainNetBIOSName'='${DomainNetBIOSName}'
+            'DomainAdminUser'='${DomainAdminUser}'
+            'DomainAdminPassword'='${DomainAdminPassword}'
+            'SafeModePassword'='${DomainAdminPassword}'
+            'ADServer1NetBIOSName'='${ADServer1NetBIOSName}'
+            'InstallRSAT'='${InstallRSAT}'
+          }
+          </powershell>
       Tags:
         - Key: Name
           Value: !Ref ADServer1NetBIOSName
-      UserData: !Base64
-        Fn::Join:
-          - ''
-          - - "<powershell>\n"
-            - "$ErrorActionPreference = 'Stop'\n"
-            - "Start-Transcript -Path C:/cfn/log/user-data.log -Append\n"
-            - "# Getting the DSC Cert\n"
-            - "$cert = New-SelfSignedCertificate -DnsName 'AWSQSDscEncryptCert' -KeyUsage KeyEncipherment -Type DocumentEncryptionCert\n"
-            - "# Getting the domain admin credential\n"
-            - "$SecretObj = Get-SECSecretValue -SecretId '"
-            - !Ref ADAdminSecrets
-            - "'\n"
-            - "$Secret = $SecretObj.SecretString | ConvertFrom-Json\n"
-            - "$DomainAdminUser = $Secret.username\n"
-            - "$DomainAdminPassword = $Secret.password | ConvertTo-SecureString -AsPlainText -Force\n"
-            - "$Credential = New-Object System.Management.Automation.PSCredential($DomainAdminUser,$DomainAdminPassword)\n"
-            - "# Installing AD DS\n"
-            - "Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools\n"
-            - "# Promoting DC\n"
-            - "Install-ADDSForest -DomainName '"
-            - !Ref DomainDNSName
-            - "' -DomainNetbiosName '"
-            - !Ref DomainNetBIOSName
-            - "' -SafeModeAdministratorPassword $DomainAdminPassword -Force -NoRebootOnCompletion\n"
-            - "# Signal success\n"
-            - "cfn-signal.exe -e $LASTEXITCODE '"
-            - !Ref ADServer1Handle
-            - "'\n"
-            - "# Restart computer\n"
-            - "Restart-Computer -Force\n"
-            - "</powershell>\n"
-            - "<persist>true</persist>\n"
-
-  WaitForADServer1:
-    Type: AWS::CloudFormation::WaitCondition
-    Properties:
-      Handle: !Ref ADServer1Handle
-      Timeout: '1800'
-      Count: 1
-
-  ADServer2Handle:
-    Type: AWS::CloudFormation::WaitConditionHandle
 
   ADServer2:
     Type: AWS::EC2::Instance
-    DependsOn: WaitForADServer1
+    DependsOn: ADServer1
     Properties:
       ImageId: !Ref WindowsServerAMI
       InstanceType: !Ref ADServer2InstanceType
       SubnetId: !Ref PrivateSubnet2ID
       PrivateIpAddress: !Ref ADServer2PrivateIP
-      IamInstanceProfile: !Ref DomainControllerInstanceProfile
+      IamInstanceProfile: !Ref ADServerProfile
       SecurityGroupIds: 
         - !Ref DomainControllerSG
+        - !Ref DomainControllerInternalSG
       KeyName: !Ref KeyPairName
       BlockDeviceMappings:
         - DeviceName: /dev/sda1
@@ -538,100 +776,58 @@ Resources:
             VolumeType: gp3
             Encrypted: true
             KmsKeyId: !If [HasKmsKey, !Ref EbsEncryptionKmsKeyId, !Ref 'AWS::NoValue']
+      UserData: 
+        Fn::Base64: !Sub |
+          <powershell>
+          $instanceId = (Invoke-WebRequest -Uri http://169.254.169.254/latest/meta-data/instance-id -UseBasicParsing).Content
+          Start-SSMAutomationExecution -DocumentName 'AWSQuickStartInstanceConfiguration' -Parameter @{
+            'InstanceId'=$instanceId
+            'TimeZone'='UTC'
+            'Locale'='en-US'
+          }
+          Start-SSMAutomationExecution -DocumentName 'AWSQuickStartActiveDirectoryDC' -Parameter @{
+            'InstanceId'=$instanceId
+            'DomainDNSName'='${DomainDNSName}'
+            'DomainAdminUser'='${DomainNetBIOSName}\\${DomainAdminUser}'
+            'DomainAdminPassword'='${DomainAdminPassword}'
+            'SafeModePassword'='${DomainAdminPassword}'
+            'ADServer2NetBIOSName'='${ADServer2NetBIOSName}'
+            'InstallRSAT'='${InstallRSAT}'
+          }
+          </powershell>
       Tags:
         - Key: Name
           Value: !Ref ADServer2NetBIOSName
-      UserData: !Base64
-        Fn::Join:
-          - ''
-          - - "<powershell>\n"
-            - "$ErrorActionPreference = 'Stop'\n"
-            - "Start-Transcript -Path C:/cfn/log/user-data.log -Append\n"
-            - "# Getting the DSC Cert\n"
-            - "$cert = New-SelfSignedCertificate -DnsName 'AWSQSDscEncryptCert' -KeyUsage KeyEncipherment -Type DocumentEncryptionCert\n"
-            - "# Getting the domain admin credential\n"
-            - "$SecretObj = Get-SECSecretValue -SecretId '"
-            - !Ref ADAdminSecrets
-            - "'\n"
-            - "$Secret = $SecretObj.SecretString | ConvertFrom-Json\n"
-            - "$DomainAdminUser = $Secret.username\n"
-            - "$DomainAdminPassword = $Secret.password | ConvertTo-SecureString -AsPlainText -Force\n"
-            - "$Credential = New-Object System.Management.Automation.PSCredential($DomainAdminUser,$DomainAdminPassword)\n"
-            - "# Installing AD DS\n"
-            - "Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools\n"
-            - "# Adding computer to domain\n"
-            - "Add-Computer -DomainName '"
-            - !Ref DomainDNSName
-            - "' -Credential $Credential\n"
-            - "# Promoting DC\n"
-            - "Install-ADDSDomainController -DomainName '"
-            - !Ref DomainDNSName
-            - "' -Credential $Credential -SafeModeAdministratorPassword $DomainAdminPassword -Force -NoRebootOnCompletion\n"
-            - "# Signal success\n"
-            - "cfn-signal.exe -e $LASTEXITCODE '"
-            - !Ref ADServer2Handle
-            - "'\n"
-            - "# Restart computer\n"
-            - "Restart-Computer -Force\n"
-            - "</powershell>\n"
-            - "<persist>true</persist>\n"
-
-  WaitForADServer2:
-    Type: AWS::CloudFormation::WaitCondition
-    Properties:
-      Handle: !Ref ADServer2Handle
-      Timeout: '1800'
-      Count: 1
 
   PKIStack:
     Type: AWS::CloudFormation::Stack
     Condition: DeployPKI
-    DependsOn: 
-      - WaitForADServer1
-      - WaitForADServer2
+    DependsOn: ADServer2
     Properties:
       TemplateURL: !Sub 
-        - https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}submodules/cfn-ps-microsoft-pki/templates/two-tier-offline.template.yaml
-        - S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
-          S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
+        - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}submodules/cfn-ps-microsoft-pki/templates/two-tier-offline.template.yaml'
+        - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
+          S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
       Parameters:
-        VPCID: !Ref VPCID
-        DomainMemberSGID: !Ref DomainMemberSG
         DomainDNSName: !Ref DomainDNSName
         DomainNetBIOSName: !Ref DomainNetBIOSName
-        SubCA1NetBIOSName: 'SUBCA1'
-        SubCA2NetBIOSName: 'SUBCA2'
-        OrCANetBIOSName: 'ORCA'
-        ADServer1PrivateIP: !Ref ADServer1PrivateIP
-        ADServer2PrivateIP: !Ref ADServer2PrivateIP
-        ADAdminSecretArn: !Ref ADAdminSecrets
+        DomainAdminUser: !Ref DomainAdminUser
+        DomainAdminPassword: !Ref DomainAdminPassword
+        VPCID: !Ref VPCID
+        VPCCIDR: !Ref VPCCIDR
         PrivateSubnet1ID: !Ref PrivateSubnet1ID
         PrivateSubnet2ID: !Ref PrivateSubnet2ID
         KeyPairName: !Ref KeyPairName
-        QSS3BucketName: !Ref QSS3BucketName
-        QSS3BucketRegion: !Ref QSS3BucketRegion
-        QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}submodules/cfn-ps-microsoft-pki/
         CaKeyLength: !Ref CaKeyLength
         CaHashAlgorithm: !Ref CaHashAlgorithm
         CaValidityPeriodUnits: !Ref CaValidityPeriodUnits
         OrCaValidityPeriodUnits: !Ref OrCaValidityPeriodUnits
         UseS3ForCRL: !Ref UseS3ForCRL
-        S3CRLBucketName: !Ref S3CRLBucketName
-        EbsEncryptionKmsKeyId: !Ref EbsEncryptionKmsKeyId
-
+        S3CRLBucketName: !If [UseS3CRL, !Ref S3CRLBucketName, '']
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3BucketRegion: !Ref QSS3BucketRegion
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
 Outputs:
-  DomainAdmin:
-    Description: Domain admin user name
-    Value: !Ref DomainAdminUser
-
-  DomainDNSName:
-    Description: Fully qualified domain name (FQDN) of the forest root domain
-    Value: !Ref DomainDNSName
-
-  DomainNetBIOSName:
-    Description: NetBIOS name of the domain (up to 15 characters)
-    Value: !Ref DomainNetBIOSName
-
   ADServer1PrivateIP:
     Description: Private IP address of the first Active Directory server
     Value: !Ref ADServer1PrivateIP
@@ -640,27 +836,28 @@ Outputs:
     Description: Private IP address of the second Active Directory server
     Value: !Ref ADServer2PrivateIP
 
+  DomainAdmin:
+    Description: Domain administrator account
+    Value: !Sub ${DomainNetBIOSName}\${DomainAdminUser}
+
+  DomainDNSName:
+    Description: Fully qualified domain name (FQDN) of the forest root domain
+    Value: !Ref DomainDNSName
+
   ADServer1ID:
-    Description: ID of the first Active Directory server
+    Description: Instance ID of the first Active Directory server
     Value: !Ref ADServer1
 
   ADServer2ID:
-    Description: ID of the second Active Directory server
+    Description: Instance ID of the second Active Directory server
     Value: !Ref ADServer2
 
-  DomainControllerSGID:
-    Description: Domain Controllers Security Group ID
-    Value: !Ref DomainControllerSG
-
-  DomainMemberSGID:
-    Description: Domain Member Security Group ID
-    Value: !Ref DomainMemberSG
-
-  ADAdminSecretArn:
-    Description: ARN of the Secrets Manager secret storing AD admin credentials
-    Value: !Ref ADAdminSecrets
-
-  PKIStackRef:
+  EnterpriseCAID:
     Condition: DeployPKI
-    Description: Reference to the PKI Stack
-    Value: !Ref PKIStack
+    Description: Enterprise CA instance ID
+    Value: !GetAtt PKIStack.Outputs.EnterpriseCAID
+
+  EnterpriseCAIP:
+    Condition: DeployPKI
+    Description: Enterprise CA private IP address
+    Value: !GetAtt PKIStack.Outputs.EnterpriseCAIP
